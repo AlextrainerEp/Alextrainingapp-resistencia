@@ -75,6 +75,20 @@ h3{margin:12px 0 6px;font-size:15px}
 .sesion select{width:auto;margin:0;padding:6px}
 .sesion button{width:auto;margin:0;padding:4px 10px;background:#999}
 .sesion .txt{flex:1}
+.resumen-semana{font-size:13px;font-weight:700;color:#2e3133;margin:6px 0 8px}
+.semana-grid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:6px;overflow-x:auto;padding-bottom:6px}
+.dia-col{background:rgba(255,255,255,.55);border-radius:8px;min-height:180px;display:flex;flex-direction:column;overflow:hidden}
+.dia-head{background:#2e3133;color:#D9DDE0;padding:6px 8px;font-size:12px;display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex-wrap:wrap}
+.dia-head b{font-size:13px;color:#fff}
+.dia-body{padding:6px;display:flex;flex-direction:column;gap:6px;flex:1}
+.tarjeta{background:#fff;border-left:5px solid #607d8b;border-radius:6px;padding:6px;box-shadow:0 1px 3px rgba(0,0,0,.12);font-size:12px}
+.tarjeta.hecha{opacity:.65}
+.tarjeta .tit{font-weight:700;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+.tarjeta .det{color:#555;margin:2px 0 4px}
+.tarjeta .acc{display:flex;gap:4px;align-items:center}
+.tarjeta select{width:auto;margin:0;padding:2px;font-size:11px;flex:1;min-width:0}
+.tarjeta button{width:auto;margin:0;padding:2px 6px;font-size:11px}
+.vacio-dia{color:#888;font-size:12px;text-align:center;margin-top:8px}
 
 .oculto{display:none!important}
 .ver{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 0 8px;cursor:pointer}
@@ -140,6 +154,27 @@ h3{margin:12px 0 6px;font-size:15px}
       <button id="btn-zona">Guardar zona</button>
       <div id="zonas"></div>
 
+      <h3>Tests</h3>
+      <div class="row">
+        <select id="test-tipo"><option value="5k">5 km (mm:ss)</option><option value="cooper">Cooper 12 min (metros)</option></select>
+        <input id="test-fecha" type="date">
+      </div>
+      <input id="test-resultado" placeholder="Resultado (ej. 24:30 o 2400)">
+      <button id="btn-test">Guardar test</button>
+      <p id="nivel-sugerido" class="muted"></p>
+      <div id="tests"></div>
+
+      <h3>Aplicar plan</h3>
+      <div class="row">
+        <select id="aplicar-nivel">
+          <option value="principiante">Principiante</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+        </select>
+        <input id="aplicar-fecha" type="date">
+      </div>
+      <button id="btn-aplicar">Aplicar plan al atleta</button>
+
       <h3>Calendario</h3>
       <div class="nav">
         <button id="semana-ant" class="sec">←</button>
@@ -158,6 +193,11 @@ h3{margin:12px 0 6px;font-size:15px}
     <div class="card">
       <div class="cab">Biblioteca de sesiones</div>
       <input id="s-nombre" placeholder="Nombre (ej. Series 6x800)">
+      <select id="s-nivel">
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
       <select id="s-tipo">
         <option value="rodaje">Rodaje</option>
         <option value="series">Series</option>
@@ -175,7 +215,27 @@ h3{margin:12px 0 6px;font-size:15px}
         <button id="btn-sesion">Guardar sesión</button>
         <button id="btn-cancelar-sesion" class="sec oculto">Cancelar edición</button>
       </div>
+      <select id="filtro-nivel">
+        <option value="">Todos los niveles</option>
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
       <div id="biblioteca"></div>
+    </div>
+
+    <div class="card">
+      <div class="cab">Planes por nivel (12 semanas, 3 días a la semana)</div>
+      <div class="row">
+        <select id="plan-nivel">
+          <option value="principiante">Principiante</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+        </select>
+        <button id="btn-plan-ver" class="sec">Ver plan</button>
+        <button id="btn-plan-generar">Generar plan</button>
+      </div>
+      <div id="plan-vista"></div>
     </div>
   </div>
 </main>
@@ -305,7 +365,9 @@ function abrirFicha(atleta) {
   $('ficha').classList.remove('oculto');
   $('ficha-nombre').textContent = atleta.nombre;
   semanaInicio = lunesDe(new Date());
+  if (atleta.nivel) $('aplicar-nivel').value = atleta.nivel;
   cargarZonas();
+  cargarTests();
   cargarSemana();
 }
 
@@ -350,12 +412,18 @@ async function cargarBiblioteca() {
   data.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
-    opt.textContent = s.nombre;
+    opt.textContent = `${s.nivel ? s.nivel + ' · ' : ''}${s.nombre}`;
     select.appendChild(opt);
   });
 
+  pintarBiblioteca(data);
+}
+
+function pintarBiblioteca(data) {
+  const filtro = $('filtro-nivel').value;
+  const visibles = filtro ? data.filter(s => s.nivel === filtro) : data;
   $('biblioteca').innerHTML = '';
-  data.forEach(s => {
+  visibles.forEach(s => {
     const div = document.createElement('div');
     div.className = 'atleta';
 
@@ -365,7 +433,7 @@ async function cargarBiblioteca() {
     const detalle = document.createElement('div');
     detalle.className = 'muted';
     detalle.textContent =
-      `${s.tipo || 'sin tipo'} · ${s.duracion_min ?? '-'} min · carga ${s.carga ?? '-'}`;
+      `${s.nivel || 'sin nivel'} · ${s.tipo || 'sin tipo'} · ${s.duracion_min ?? '-'} min · carga ${s.carga ?? '-'}`;
 
     const acciones = document.createElement('div');
     acciones.className = 'acciones';
@@ -390,6 +458,7 @@ function editarSesion(s) {
   sesionEditandoId = s.id;
   $('s-nombre').value = s.nombre;
   $('s-tipo').value = s.tipo || 'otro';
+  $('s-nivel').value = s.nivel || 'principiante';
   $('s-duracion').value = s.duracion_min ?? '';
   $('s-carga').value = s.carga ?? '';
   $('s-descripcion').value = s.descripcion || '';
@@ -402,6 +471,7 @@ function limpiarFormularioSesion() {
   sesionEditandoId = null;
   $('s-nombre').value = '';
   $('s-tipo').value = 'rodaje';
+  $('s-nivel').value = 'principiante';
   $('s-duracion').value = '';
   $('s-carga').value = '';
   $('s-descripcion').value = '';
@@ -410,6 +480,7 @@ function limpiarFormularioSesion() {
 }
 
 $('btn-cancelar-sesion').onclick = limpiarFormularioSesion;
+$('filtro-nivel').onchange = () => pintarBiblioteca(bibliotecaCache);
 
 $('btn-sesion').onclick = async () => {
   const nombre = $('s-nombre').value.trim();
@@ -417,6 +488,7 @@ $('btn-sesion').onclick = async () => {
 
   const datos = {
     nombre,
+    nivel: $('s-nivel').value,
     tipo: $('s-tipo').value,
     duracion_min: $('s-duracion').value ? parseInt($('s-duracion').value) : null,
     carga: $('s-carga').value ? parseInt($('s-carga').value) : null,
@@ -477,6 +549,8 @@ $('btn-asignar').onclick = async () => {
   cargarSemana();
 };
 
+const COLORES = { rodaje: '#2e7d32', series: '#c0392b', tirada: '#1565c0', fuerza: '#6a1b9a', bici: '#e67e22', otro: '#607d8b' };
+
 async function cargarSemana() {
   const inicio = iso(semanaInicio);
   const fin = iso(sumarDias(semanaInicio, 6));
@@ -490,36 +564,61 @@ async function cargarSemana() {
     .order('fecha');
   if (error) return alert(error.message);
 
+  const totalMin = data.reduce((a, p) => a + (p.duracion_min || 0), 0);
+  const hechas = data.filter(p => p.estado === 'hecha').length;
+
   $('semana').innerHTML = '';
+  const resumen = document.createElement('div');
+  resumen.className = 'resumen-semana';
+  resumen.textContent = `${data.length} sesiones · ${(totalMin / 60).toFixed(1)} h · ${hechas} hechas`;
+  $('semana').appendChild(resumen);
+
+  const grid = document.createElement('div');
+  grid.className = 'semana-grid';
+
   for (let i = 0; i < 7; i++) {
     const dia = sumarDias(semanaInicio, i);
-    const bloque = document.createElement('div');
-    bloque.className = 'dia';
-
-    const titulo = document.createElement('h3');
-    titulo.textContent = `${DIAS[i]} ${dia.getDate()}/${dia.getMonth() + 1}`;
-    bloque.appendChild(titulo);
-
     const delDia = data.filter(p => p.fecha === iso(dia));
+    const minDia = delDia.reduce((a, p) => a + (p.duracion_min || 0), 0);
+
+    const col = document.createElement('div');
+    col.className = 'dia-col';
+
+    const head = document.createElement('div');
+    head.className = 'dia-head';
+    head.innerHTML = `<b>${DIAS[i].slice(0, 3)} ${dia.getDate()}/${dia.getMonth() + 1}</b><span>${minDia ? minDia + ' min' : ''}</span>`;
+
+    const body = document.createElement('div');
+    body.className = 'dia-body';
     if (delDia.length === 0) {
       const vacio = document.createElement('div');
-      vacio.className = 'muted';
-      vacio.textContent = 'Sin sesiones';
-      bloque.appendChild(vacio);
+      vacio.className = 'vacio-dia';
+      vacio.textContent = 'Descanso';
+      body.appendChild(vacio);
     }
+    delDia.forEach(p => body.appendChild(tarjetaSesion(p)));
 
-    delDia.forEach(p => bloque.appendChild(filaSesion(p)));
-    $('semana').appendChild(bloque);
+    col.append(head, body);
+    grid.appendChild(col);
   }
+  $('semana').appendChild(grid);
 }
 
-function filaSesion(p) {
-  const fila = document.createElement('div');
-  fila.className = 'sesion';
+function tarjetaSesion(p) {
+  const card = document.createElement('div');
+  card.className = 'tarjeta' + (p.estado === 'hecha' ? ' hecha' : '');
+  card.style.borderLeftColor = COLORES[p.tipo] || '#607d8b';
 
-  const texto = document.createElement('div');
-  texto.className = 'txt';
-  texto.textContent = `${p.descripcion || p.tipo || 'Sesión'} · ${p.duracion_min ?? '-'} min`;
+  const tit = document.createElement('div');
+  tit.className = 'tit';
+  tit.textContent = p.descripcion || p.tipo || 'Sesión';
+
+  const det = document.createElement('div');
+  det.className = 'det';
+  det.textContent = `${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
+
+  const acc = document.createElement('div');
+  acc.className = 'acc';
 
   const estado = document.createElement('select');
   ['pendiente', 'hecha', 'omitida'].forEach(e => {
@@ -532,11 +631,13 @@ function filaSesion(p) {
   estado.onchange = async () => {
     const { error } = await sb.from('sesiones_planificadas')
       .update({ estado: estado.value }).eq('id', p.id);
-    if (error) alert(error.message);
+    if (error) return alert(error.message);
+    cargarSemana();
   };
 
   const borrar = document.createElement('button');
-  borrar.textContent = 'Quitar';
+  borrar.className = 'danger';
+  borrar.textContent = '✕';
   borrar.onclick = async () => {
     if (!confirm('¿Quitar esta sesión del calendario?')) return;
     const { error } = await sb.from('sesiones_planificadas').delete().eq('id', p.id);
@@ -544,9 +645,203 @@ function filaSesion(p) {
     cargarSemana();
   };
 
-  fila.append(texto, estado, borrar);
-  return fila;
+  acc.append(estado, borrar);
+  card.append(tit, det, acc);
+  return card;
 }
+
+/* ---------- TESTS Y NIVEL ---------- */
+
+const NIVELES = ['principiante', 'intermedio', 'avanzado'];
+
+function nivelDe5k(seg) { return seg < 1200 ? 'avanzado' : seg <= 1620 ? 'intermedio' : 'principiante'; }
+function nivelDeCooper(m) { return m >= 2600 ? 'avanzado' : m >= 2000 ? 'intermedio' : 'principiante'; }
+
+function nivelSugerido(tests) {
+  const ultimo = {};
+  tests.forEach(t => { if (!ultimo[t.tipo] || t.fecha > ultimo[t.tipo].fecha) ultimo[t.tipo] = t; });
+  const valores = [];
+  if (ultimo['5k']) valores.push(NIVELES.indexOf(ultimo['5k'].nivel_sugerido));
+  if (ultimo['cooper']) valores.push(NIVELES.indexOf(ultimo['cooper'].nivel_sugerido));
+  if (!valores.length) return null;
+  return NIVELES[Math.floor(valores.reduce((a, b) => a + b, 0) / valores.length)];
+}
+
+function aSegundos(txt) {
+  const m = txt.trim().match(/^(\d+):(\d{1,2})$/);
+  return m ? (+m[1]) * 60 + (+m[2]) : parseFloat(txt);
+}
+function formatoTiempo(seg) {
+  const m = Math.floor(seg / 60), s = Math.round(seg % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+$('btn-test').onclick = async () => {
+  const tipo = $('test-tipo').value;
+  const valor = tipo === '5k' ? aSegundos($('test-resultado').value) : parseFloat($('test-resultado').value);
+  if (!valor || isNaN(valor)) return alert('Escribe un resultado válido');
+  const fecha = $('test-fecha').value || iso(new Date());
+  const nivel = tipo === '5k' ? nivelDe5k(valor) : nivelDeCooper(valor);
+  const { error } = await sb.from('tests').insert({
+    atleta_id: atletaActual.id, fecha, tipo, resultado: valor, nivel_sugerido: nivel
+  });
+  if (error) return alert(error.message);
+  $('test-resultado').value = '';
+  cargarTests();
+};
+
+async function cargarTests() {
+  const { data, error } = await sb.from('tests')
+    .select('*').eq('atleta_id', atletaActual.id).order('fecha', { ascending: false });
+  if (error) return alert(error.message);
+  $('tests').innerHTML = '';
+  data.forEach(t => {
+    const p = document.createElement('div');
+    p.className = 'zona';
+    const txt = t.tipo === '5k' ? `${formatoTiempo(t.resultado)} (5 km)` : `${t.resultado} m (Cooper)`;
+    p.textContent = `${t.fecha} · ${txt} · ${t.nivel_sugerido}`;
+    $('tests').appendChild(p);
+  });
+  const sug = nivelSugerido(data);
+  $('nivel-sugerido').textContent = sug ? `Nivel sugerido: ${sug}` : 'Sin tests todavía';
+  if (sug) {
+    $('aplicar-nivel').value = sug;
+    if (atletaActual.nivel !== sug) {
+      await sb.from('atletas').update({ nivel: sug }).eq('id', atletaActual.id);
+      atletaActual.nivel = sug;
+    }
+  }
+}
+
+/* ---------- PLANES POR NIVEL ---------- */
+
+const FACTOR = [0.8, 0.85, 0.9, 0.75, 0.95, 1.0, 1.05, 0.8, 1.1, 1.15, 0.7, 0.5];
+const CONF_NIVEL = {
+  principiante: {
+    calidad: { nombre: 'Cuestas suaves', tipo: 'series', min: 35, desc: '6 subidas suaves de 20 s a ritmo cómodo, bajada caminando.' },
+    rodaje: { nombre: 'Rodaje suave', tipo: 'rodaje', base: 30, desc: 'Ritmo de conversación.' },
+    larga: { nombre: 'Tirada larga', tipo: 'tirada', base: 45, desc: 'Ritmo muy cómodo, puedes hablar sin cortarte.' }
+  },
+  intermedio: {
+    calidad: { nombre: 'Series 6x800', tipo: 'series', min: 60, desc: 'Calentamiento 15 min, 6x800 m a ritmo de 5 km con 2 min caminando.' },
+    rodaje: { nombre: 'Rodaje medio', tipo: 'rodaje', base: 45, desc: 'Ritmo cómodo, los últimos 10 min algo más rápido.' },
+    larga: { nombre: 'Tirada larga', tipo: 'tirada', base: 70, desc: '60 min suaves y el resto a ritmo de maratón.' }
+  },
+  avanzado: {
+    calidad: { nombre: 'Series 5x1000', tipo: 'series', min: 70, desc: 'Calentamiento 20 min, 5x1000 m a ritmo de 10 km con 90 s de recuperación.' },
+    rodaje: { nombre: 'Rodaje doble ritmo', tipo: 'rodaje', base: 55, desc: 'Dos mitades, la segunda más rápida.' },
+    larga: { nombre: 'Tirada larga con ritmo final', tipo: 'tirada', base: 100, desc: 'Los últimos 40 min a ritmo de maratón.' }
+  }
+};
+
+function generarSesiones(nivel) {
+  const c = CONF_NIVEL[nivel];
+  const out = [];
+  for (let w = 1; w <= 12; w++) {
+    if (w === 12) {
+      out.push({ semana: 12, dia_semana: 2, tipo: 'test', nombre: 'Test 5 km', duracion_min: null,
+        descripcion: 'Máximo esfuerzo controlado. Anota el tiempo en la ficha del atleta.' });
+      out.push({ semana: 12, dia_semana: 4, tipo: 'rodaje', nombre: 'Rodaje suave', duracion_min: 30,
+        descripcion: 'Ritmo muy suave.' });
+      out.push({ semana: 12, dia_semana: 6, tipo: 'test', nombre: 'Test Cooper 12 min', duracion_min: 12,
+        descripcion: 'Máxima distancia en 12 minutos. Anota los metros en la ficha del atleta.' });
+      continue;
+    }
+    const f = FACTOR[w - 1];
+    out.push({ semana: w, dia_semana: 2, tipo: c.calidad.tipo, nombre: c.calidad.nombre,
+      duracion_min: Math.round(c.calidad.min * f), descripcion: c.calidad.desc });
+    out.push({ semana: w, dia_semana: 4, tipo: c.rodaje.tipo, nombre: c.rodaje.nombre,
+      duracion_min: Math.round(c.rodaje.base * f), descripcion: c.rodaje.desc });
+    out.push({ semana: w, dia_semana: 6, tipo: c.larga.tipo, nombre: c.larga.nombre,
+      duracion_min: Math.round(c.larga.base * f), descripcion: c.larga.desc });
+  }
+  return out;
+}
+
+async function planDelNivel(nivel) {
+  const { data } = await sb.from('planes').select('*')
+    .eq('nivel', nivel).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  return data;
+}
+
+async function generarPlan(nivel) {
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: existentes } = await sb.from('planes').select('id')
+    .eq('entrenador_id', user.id).eq('nivel', nivel);
+  if (existentes && existentes.length) {
+    if (!confirm('Ya existe un plan de este nivel. ¿Sustituirlo por uno nuevo?')) return;
+    await sb.from('planes').delete().in('id', existentes.map(p => p.id));
+  }
+  const { data: plan, error } = await sb.from('planes')
+    .insert({ entrenador_id: user.id, nombre: `Plan ${nivel} · 12 semanas`, nivel, semanas: 12 })
+    .select().single();
+  if (error) return alert(error.message);
+  const filas = generarSesiones(nivel).map(s => ({ ...s, plan_id: plan.id }));
+  const { error: e2 } = await sb.from('plan_sesiones').insert(filas);
+  if (e2) return alert(e2.message);
+  verPlan(nivel);
+}
+
+async function verPlan(nivel) {
+  const plan = await planDelNivel(nivel);
+  const vista = $('plan-vista');
+  vista.innerHTML = '';
+  if (!plan) {
+    vista.innerHTML = '<p class="muted">No hay plan para este nivel. Pulsa «Generar plan».</p>';
+    return;
+  }
+  const { data: filas, error } = await sb.from('plan_sesiones').select('*')
+    .eq('plan_id', plan.id).order('semana').order('dia_semana');
+  if (error) return alert(error.message);
+  const DIA = { 2: 'Martes', 4: 'Jueves', 6: 'Sábado' };
+  for (let w = 1; w <= plan.semanas; w++) {
+    const h = document.createElement('h3');
+    h.textContent = `Semana ${w}`;
+    vista.appendChild(h);
+    filas.filter(f => f.semana === w).forEach(f => {
+      const d = document.createElement('div');
+      d.className = 'zona';
+      d.textContent = `${DIA[f.dia_semana] || f.dia_semana} · ${f.nombre}` +
+        (f.duracion_min ? ` · ${f.duracion_min} min` : '') + ` — ${f.descripcion || ''}`;
+      vista.appendChild(d);
+    });
+  }
+}
+
+$('btn-plan-ver').onclick = () => verPlan($('plan-nivel').value);
+$('btn-plan-generar').onclick = () => generarPlan($('plan-nivel').value);
+
+$('btn-aplicar').onclick = async () => {
+  const inicio = $('aplicar-fecha').value;
+  if (!inicio) return alert('Elige la fecha de inicio');
+  const plan = await planDelNivel($('aplicar-nivel').value);
+  if (!plan) return alert('No hay plan para ese nivel. Genéralo en la sección de planes.');
+
+  const { data: filas, error } = await sb.from('plan_sesiones').select('*').eq('plan_id', plan.id);
+  if (error) return alert(error.message);
+
+  const base = lunesDe(new Date(inicio + 'T00:00:00'));
+  const fin = iso(sumarDias(base, plan.semanas * 7 - 1));
+  const { data: bloque, error: eb } = await sb.from('bloques').insert({
+    atleta_id: atletaActual.id, nombre: plan.nombre, fecha_inicio: iso(base), fecha_fin: fin
+  }).select().single();
+  if (eb) return alert(eb.message);
+
+  const sesiones = filas.map(f => ({
+    atleta_id: atletaActual.id,
+    bloque_id: bloque.id,
+    fecha: iso(sumarDias(base, (f.semana - 1) * 7 + (f.dia_semana - 1))),
+    tipo: f.tipo,
+    descripcion: f.nombre + (f.descripcion ? ' — ' + f.descripcion : ''),
+    duracion_min: f.duracion_min
+  }));
+  const { error: es } = await sb.from('sesiones_planificadas').insert(sesiones);
+  if (es) return alert(es.message);
+
+  alert(`Plan aplicado: ${sesiones.length} sesiones.`);
+  semanaInicio = base;
+  cargarSemana();
+};
 
 mostrarSegunSesion();
 </script>
