@@ -123,6 +123,15 @@ h3{margin:12px 0 6px;font-size:15px}
 .mes-celda.fuera{opacity:.4}
 .mes-num{font-weight:700;font-size:12px}
 .mes-item{border-left:3px solid #999;padding-left:3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal-caja{background:#fff;border-radius:12px;padding:16px;max-width:420px;width:100%}
+.banner-mover{position:fixed;left:0;right:0;bottom:0;background:#2e3133;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:40;font-size:14px}
+.banner-mover button{width:auto}
+.mes-celda{min-height:88px}
+.mes-item{cursor:grab}
+.tarjeta[draggable="true"]{cursor:grab}
+.mover-btn{width:auto;margin-left:6px;padding:2px 8px;border-radius:6px;background:#e3e6e8;color:#1d1f21;border:0;font-size:13px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -1172,6 +1181,51 @@ const COLORES = { rodaje: '#2e7d32', series: '#c0392b', tirada: '#1565c0', fuerz
 
 let vistaMes = false;
 let mesActual = new Date();
+let arrastrando = null;
+let seleccion = null;
+let pendienteMover = null;
+
+function iniciarMover(p) {
+  seleccion = p;
+  $('banner-texto').textContent = `Toca un día para mover o copiar «${p.descripcion || p.tipo || 'sesión'}»`;
+  $('banner-mover').classList.remove('oculto');
+}
+function cancelarSeleccion() {
+  seleccion = null;
+  $('banner-mover').classList.add('oculto');
+}
+function soltarEnDia(dia) {
+  const p = arrastrando || seleccion;
+  if (!p) return;
+  arrastrando = null;
+  const nueva = iso(dia);
+  if (nueva === p.fecha) return cancelarSeleccion();
+  pendienteMover = { p, fecha: nueva };
+  $('modal-texto').textContent = `¿Mover o copiar «${p.descripcion || p.tipo || 'sesión'}» al ${dia.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}?`;
+  $('modal-mover').classList.remove('oculto');
+}
+async function ejecutarMover(copiar) {
+  if (!pendienteMover) return;
+  const { p, fecha } = pendienteMover;
+  let res;
+  if (copiar) {
+    res = await sb.from('sesiones_planificadas').insert({
+      atleta_id: p.atleta_id, bloque_id: p.bloque_id ?? null, fecha,
+      tipo: p.tipo, descripcion: p.descripcion, duracion_min: p.duracion_min, estado: 'pendiente'
+    });
+  } else {
+    res = await sb.from('sesiones_planificadas').update({ fecha }).eq('id', p.id);
+  }
+  if (res.error) return alert(res.error.message);
+  pendienteMover = null;
+  $('modal-mover').classList.add('oculto');
+  cancelarSeleccion();
+  cargarSemana();
+}
+$('mover-si').onclick = () => ejecutarMover(false);
+$('mover-copiar').onclick = () => ejecutarMover(true);
+$('mover-no').onclick = () => { pendienteMover = null; $('modal-mover').classList.add('oculto'); };
+$('banner-cancelar').onclick = cancelarSeleccion;
 
 function mostrarTab(id) {
   document.querySelectorAll('.secc').forEach(x => x.classList.toggle('on', x.dataset.sec === id));
@@ -1238,6 +1292,10 @@ async function cargarMes() {
       t.className = 'mes-item';
       t.style.borderLeftColor = (typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999';
       t.textContent = (p.descripcion || p.tipo || '').split(' — ')[0];
+      t.draggable = true;
+      t.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
+      t.ondragend = () => { arrastrando = null; };
+      t.onclick = (e) => { e.stopPropagation(); iniciarMover(p); };
       celda.appendChild(t);
     });
     if (delDia.length > 3) {
@@ -1246,7 +1304,10 @@ async function cargarMes() {
       m.textContent = `+${delDia.length - 3} más`;
       celda.appendChild(m);
     }
+    celda.ondragover = (e) => e.preventDefault();
+    celda.ondrop = (e) => { e.preventDefault(); soltarEnDia(dia); };
     celda.onclick = () => {
+      if (seleccion) return soltarEnDia(dia);
       semanaInicio = lunesDe(dia);
       vistaMes = false;
       $('btn-vista').textContent = 'Ver mes';
@@ -1291,6 +1352,9 @@ async function cargarSemana() {
 
     const col = document.createElement('div');
     col.className = 'dia-col';
+    col.ondragover = (e) => e.preventDefault();
+    col.ondrop = (e) => { e.preventDefault(); soltarEnDia(dia); };
+    col.onclick = () => { if (seleccion) soltarEnDia(dia); };
 
     const head = document.createElement('div');
     head.className = 'dia-head';
@@ -1316,6 +1380,9 @@ function tarjetaSesion(p) {
   const card = document.createElement('div');
   card.className = 'tarjeta' + (p.estado === 'hecha' ? ' hecha' : '');
   card.style.borderLeftColor = COLORES[p.tipo] || '#607d8b';
+  card.draggable = true;
+  card.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
+  card.ondragend = () => { arrastrando = null; };
 
   const tit = document.createElement('div');
   tit.className = 'tit';
@@ -1324,9 +1391,14 @@ function tarjetaSesion(p) {
   const det = document.createElement('div');
   det.className = 'det';
   det.textContent = `${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
+  const mv = document.createElement('button');
+  mv.className = 'mover-btn';
+  mv.textContent = '↔ mover';
+  mv.onclick = (e) => { e.stopPropagation(); iniciarMover(p); };
+  det.appendChild(mv);
 
   if (modoAtletaActivo) {
-    card.onclick = () => mostrarDetalle(p);
+    card.onclick = (e) => { if (seleccion) return; mostrarDetalle(p); };
     card.append(tit, det);
     return card;
   }
@@ -1559,5 +1631,19 @@ $('btn-aplicar').onclick = async () => {
 
 mostrarSegunSesion();
 </script>
+<div id="banner-mover" class="oculto banner-mover">
+  <span id="banner-texto"></span>
+  <button id="banner-cancelar" class="sec">Cancelar</button>
+</div>
+<div id="modal-mover" class="oculto modal">
+  <div class="modal-caja">
+    <p id="modal-texto"></p>
+    <div class="acciones">
+      <button id="mover-si" class="gold">Mover</button>
+      <button id="mover-copiar" class="sec">Copiar</button>
+      <button id="mover-no" class="link">Cancelar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
