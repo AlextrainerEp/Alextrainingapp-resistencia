@@ -206,8 +206,7 @@ h3{margin:12px 0 6px;font-size:15px}
     <nav class="tabs-t" id="tabs-t">
       <button class="tabt on" data-tab="atletas">Atletas</button>
       <button class="tabt" data-tab="ficha">Ficha</button>
-      <button class="tabt" data-tab="biblio">Biblioteca</button>
-      <button class="tabt" data-tab="planes">Planes</button>
+      <button class="tabt" data-tab="biblio">Biblioteca y planes</button>
     </nav>
 
     <section class="secc on" data-sec="atletas">
@@ -268,6 +267,7 @@ h3{margin:12px 0 6px;font-size:15px}
         <input id="zona-max" type="number" step="any" placeholder="Máximo">
       </div>
       <button id="btn-zona">Guardar zona</button>
+      <button id="btn-zonas-perfil" class="sec">Calcular zonas desde el perfil</button>
       <div id="zonas"></div>
 
 </div>
@@ -282,16 +282,6 @@ h3{margin:12px 0 6px;font-size:15px}
       <p id="nivel-sugerido" class="muted"></p>
       <div id="tests"></div>
 
-      <h3>Aplicar plan</h3>
-      <div class="row">
-        <select id="aplicar-nivel">
-          <option value="principiante">Principiante</option>
-          <option value="intermedio">Intermedio</option>
-          <option value="avanzado">Avanzado</option>
-        </select>
-        <input id="aplicar-fecha" type="date">
-      </div>
-      <button id="btn-aplicar">Aplicar plan al atleta</button>
 
       <h3>Métricas</h3>
       <div id="metricas-t" class="muted" style="white-space:pre-line"></div>
@@ -329,6 +319,27 @@ h3{margin:12px 0 6px;font-size:15px}
 
     <section class="secc" data-sec="biblio">
     <div class="card">
+      <div class="cab">Planes por nivel (12 semanas, 3 días a la semana)</div>
+      <div class="row">
+        <select id="plan-nivel">
+          <option value="principiante">Principiante</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+        </select>
+        <button id="btn-plan-ver" class="sec">Ver plan</button>
+        <button id="btn-plan-generar">Generar plan</button>
+      </div>
+      <div id="plan-vista"></div>
+
+      <h3>Aplicar este plan a un atleta</h3>
+      <div class="row">
+        <select id="plan-atleta"></select>
+        <input id="plan-fecha" type="date">
+      </div>
+      <button id="btn-plan-aplicar">Aplicar plan al calendario</button>
+    </div>
+
+    <div class="card">
       <div class="cab">Biblioteca de sesiones</div>
       <input id="s-nombre" placeholder="Nombre (ej. Series 6x800)">
       <select id="s-nivel">
@@ -360,22 +371,6 @@ h3{margin:12px 0 6px;font-size:15px}
         <option value="avanzado">Avanzado</option>
       </select>
       <div id="biblioteca"></div>
-    </div>
-    </section>
-
-    <section class="secc" data-sec="planes">
-    <div class="card">
-      <div class="cab">Planes por nivel (12 semanas, 3 días a la semana)</div>
-      <div class="row">
-        <select id="plan-nivel">
-          <option value="principiante">Principiante</option>
-          <option value="intermedio">Intermedio</option>
-          <option value="avanzado">Avanzado</option>
-        </select>
-        <button id="btn-plan-ver" class="sec">Ver plan</button>
-        <button id="btn-plan-generar">Generar plan</button>
-      </div>
-      <div id="plan-vista"></div>
     </div>
     </section>
   </div>
@@ -488,6 +483,9 @@ h3{margin:12px 0 6px;font-size:15px}
           <button id="btn-perfil-guardar" class="gold">Guardar perfil</button>
           <span id="perfil-estado" class="muted"></span>
         </div>
+        <h3>Mis zonas</h3>
+        <p class="muted">Se calculan solas a partir de tu perfil cada vez que lo guardas.</p>
+        <div id="zonas-a"></div>
       </div>
     </section>
 
@@ -712,7 +710,13 @@ $('btn-perfil-guardar').onclick = async () => {
   fila.consentimiento = $('pf-consentimiento').checked;
   const { error } = await sb.from('perfil_atleta').upsert(fila, { onConflict: 'atleta_id' });
   if (error) return alert(error.message);
-  $('perfil-estado').textContent = 'Guardado';
+  try {
+    const n = await volcarZonas(miAtleta.id, fila);
+    await cargarZonasAtleta();
+    $('perfil-estado').textContent = n ? `Guardado · ${n} zonas actualizadas` : 'Guardado';
+  } catch (e) {
+    return alert('Perfil guardado, pero no se pudieron calcular las zonas: ' + e.message);
+  }
   setTimeout(() => { $('perfil-estado').textContent = ''; }, 2500);
 };
 
@@ -1292,7 +1296,13 @@ async function cargarAtletas() {
   const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca, email, user_id, entrenador_id').order('nombre');
   if (error) return alert(error.message);
   $('lista').innerHTML = '';
+  const selPlan = $('plan-atleta');
+  selPlan.innerHTML = '';
   data.forEach(a => {
+    const op = document.createElement('option');
+    op.value = a.id;
+    op.textContent = a.nombre;
+    selPlan.appendChild(op);
     const div = document.createElement('div');
     div.className = 'atleta clickable';
     div.textContent = a.nombre;
@@ -1308,7 +1318,7 @@ function abrirFicha(atleta) {
   $('ficha').classList.remove('oculto');
   $('ficha-nombre').textContent = atleta.nombre;
   semanaInicio = lunesDe(new Date());
-  if (atleta.nivel) $('aplicar-nivel').value = atleta.nivel;
+  if ($('plan-atleta')) $('plan-atleta').value = atleta.id;
   $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
   $('acceso-email').value = atleta.email || '';
   $('btn-asignar-atleta').classList.toggle('oculto', !!atleta.entrenador_id);
@@ -1337,6 +1347,78 @@ $('btn-zona').onclick = async () => {
   cargarZonas();
 };
 
+function textoZona(z) {
+  const fmt = z.tipo === 'ritmo' ? (v) => formatoTiempo(v) + ' /km' : (v) => v + ' ppm';
+  return `${z.tipo === 'ritmo' ? 'RITMO' : 'FC'} · Z${z.zona}: ${fmt(z.minimo)} – ${fmt(z.maximo)}`;
+}
+
+function parseTiempo(txt) {
+  if (!txt) return null;
+  const m = String(txt).trim().match(/^(\d+):(\d{1,2})$/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+function calcularZonas(f) {
+  const zonas = [];
+  const fcMax = Number(f.fc_max) || null;
+  const fcRep = Number(f.fc_reposo) || null;
+  const fcUm = Number(f.fc_umbral) || null;
+  if (fcUm) {
+    [[0.70, 0.85], [0.85, 0.89], [0.90, 0.94], [0.95, 0.99], [1.00, 1.06]].forEach((r, i) =>
+      zonas.push({ tipo: 'fc', zona: i + 1, minimo: Math.round(fcUm * r[0]), maximo: Math.round(fcUm * r[1]) }));
+  } else if (fcMax) {
+    const reserva = fcRep ? fcMax - fcRep : null;
+    [[0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0]].forEach((r, i) => {
+      const lo = reserva ? fcRep + r[0] * reserva : fcMax * r[0];
+      const hi = reserva ? fcRep + r[1] * reserva : fcMax * r[1];
+      zonas.push({ tipo: 'fc', zona: i + 1, minimo: Math.round(lo), maximo: Math.round(hi) });
+    });
+  }
+  const U = parseTiempo(f.ritmo_umbral);
+  if (U) {
+    [[1.29, 1.45], [1.14, 1.29], [1.06, 1.14], [0.99, 1.06], [0.90, 0.99]].forEach((r, i) =>
+      zonas.push({ tipo: 'ritmo', zona: i + 1, minimo: Math.round(U * r[0]), maximo: Math.round(U * r[1]) }));
+  }
+  return zonas;
+}
+
+async function volcarZonas(atletaId, perfil) {
+  const zonas = calcularZonas(perfil);
+  if (!zonas.length) return 0;
+  const { error: e1 } = await sb.from('zonas').delete().eq('atleta_id', atletaId);
+  if (e1) throw e1;
+  const { error: e2 } = await sb.from('zonas').insert(zonas.map(z => ({ ...z, atleta_id: atletaId })));
+  if (e2) throw e2;
+  return zonas.length;
+}
+
+$('btn-zonas-perfil').onclick = async () => {
+  const { data, error } = await sb.from('perfil_atleta').select('*')
+    .eq('atleta_id', atletaActual.id).maybeSingle();
+  if (error) return alert(error.message);
+  if (!data) return alert('El atleta todavía no ha rellenado su perfil.');
+  try {
+    const n = await volcarZonas(atletaActual.id, data);
+    if (!n) return alert('Faltan pulsaciones (máx., reposo o umbral) o ritmo de umbral en el perfil.');
+  } catch (e) { return alert(e.message); }
+  cargarZonas();
+};
+
+async function cargarZonasAtleta() {
+  const { data, error } = await sb.from('zonas').select('*')
+    .eq('atleta_id', miAtleta.id).order('tipo').order('zona');
+  if (error) return alert(error.message);
+  const box = $('zonas-a');
+  box.innerHTML = '';
+  if (!data.length) { box.textContent = 'Aún no tienes zonas. Rellena tu perfil con pulsaciones y ritmo de umbral.'; return; }
+  data.forEach(z => {
+    const p = document.createElement('div');
+    p.className = 'zona';
+    p.textContent = textoZona(z);
+    box.appendChild(p);
+  });
+}
+
 async function cargarZonas() {
   const { data, error } = await sb.from('zonas')
     .select('*').eq('atleta_id', atletaActual.id).order('tipo').order('zona');
@@ -1345,7 +1427,7 @@ async function cargarZonas() {
   data.forEach(z => {
     const p = document.createElement('div');
     p.className = 'zona';
-    p.textContent = `${z.tipo.toUpperCase()} · Z${z.zona}: ${z.minimo} – ${z.maximo}`;
+    p.textContent = textoZona(z);
     $('zonas').appendChild(p);
   });
 }
@@ -1899,7 +1981,6 @@ async function cargarTests() {
   const sug = nivelSugerido(data);
   $('nivel-sugerido').textContent = sug ? `Nivel sugerido: ${sug}` : 'Sin tests todavía';
   if (sug) {
-    $('aplicar-nivel').value = sug;
     if (atletaActual.nivel !== sug) {
       await sb.from('atletas').update({ nivel: sug }).eq('id', atletaActual.id);
       atletaActual.nivel = sug;
@@ -2005,24 +2086,29 @@ async function verPlan(nivel) {
 $('btn-plan-ver').onclick = () => verPlan($('plan-nivel').value);
 $('btn-plan-generar').onclick = () => generarPlan($('plan-nivel').value);
 
-$('btn-aplicar').onclick = async () => {
-  const inicio = $('aplicar-fecha').value;
+$('plan-fecha').value = iso(lunesDe(new Date()));
+
+$('btn-plan-aplicar').onclick = async () => {
+  const atletaId = $('plan-atleta').value;
+  const inicio = $('plan-fecha').value;
+  if (!atletaId) return alert('No hay atletas. Añade uno en la pestaña Atletas.');
   if (!inicio) return alert('Elige la fecha de inicio');
-  const plan = await planDelNivel($('aplicar-nivel').value);
-  if (!plan) return alert('No hay plan para ese nivel. Genéralo en la sección de planes.');
+  const plan = await planDelNivel($('plan-nivel').value);
+  if (!plan) return alert('No hay plan para ese nivel. Pulsa «Generar plan» primero.');
 
   const { data: filas, error } = await sb.from('plan_sesiones').select('*').eq('plan_id', plan.id);
   if (error) return alert(error.message);
+  if (!filas || !filas.length) return alert('El plan no tiene sesiones. Vuelve a generarlo.');
 
   const base = lunesDe(new Date(inicio + 'T00:00:00'));
   const fin = iso(sumarDias(base, plan.semanas * 7 - 1));
   const { data: bloque, error: eb } = await sb.from('bloques').insert({
-    atleta_id: atletaActual.id, nombre: plan.nombre, fecha_inicio: iso(base), fecha_fin: fin
+    atleta_id: atletaId, nombre: plan.nombre, fecha_inicio: iso(base), fecha_fin: fin
   }).select().single();
   if (eb) return alert(eb.message);
 
   const sesiones = filas.map(f => ({
-    atleta_id: atletaActual.id,
+    atleta_id: atletaId,
     bloque_id: bloque.id,
     fecha: iso(sumarDias(base, (f.semana - 1) * 7 + (f.dia_semana - 1))),
     tipo: f.tipo,
@@ -2032,9 +2118,12 @@ $('btn-aplicar').onclick = async () => {
   const { error: es } = await sb.from('sesiones_planificadas').insert(sesiones);
   if (es) return alert(es.message);
 
-  alert(`Plan aplicado: ${sesiones.length} sesiones.`);
-  semanaInicio = base;
-  cargarSemana();
+  const nombreAtleta = $('plan-atleta').selectedOptions[0].textContent;
+  alert(`«${plan.nombre}» aplicado a ${nombreAtleta}: ${sesiones.length} sesiones desde el ${iso(base)}.`);
+  if (atletaActual && atletaActual.id === atletaId) {
+    semanaInicio = base;
+    cargarSemana();
+  }
 };
 
 mostrarSegunSesion();
