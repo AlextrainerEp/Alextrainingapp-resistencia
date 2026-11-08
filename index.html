@@ -106,6 +106,23 @@ h3{margin:12px 0 6px;font-size:15px}
 .ver{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 0 8px;cursor:pointer}
 .ver input{width:auto;margin:0}
 
+
+.tabs-t{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:#2e3133;padding:8px;border-radius:10px;margin-bottom:10px}
+.tabt{flex:0 0 auto;background:#4a4f52;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;width:auto}
+.tabt.on{background:#D9DDE0;color:#1d1f21;font-weight:700}
+.secc{display:none}
+.secc.on{display:block}
+.subs{display:flex;gap:6px;overflow-x:auto;margin:8px 0 4px;padding-bottom:4px}
+.subt{flex:0 0 auto;background:#e3e6e8;color:#1d1f21;border:0;border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;width:auto}
+.subt.on{background:#2e3133;color:#fff;font-weight:700}
+.subsec{display:none}
+.subsec.on{display:block}
+.mes-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mes-head{font-size:12px;text-align:center;font-weight:700;padding:4px 0}
+.mes-celda{background:rgba(255,255,255,.85);border-radius:6px;min-height:64px;padding:3px;font-size:11px;cursor:pointer;overflow:hidden}
+.mes-celda.fuera{opacity:.4}
+.mes-num{font-weight:700;font-size:12px}
+.mes-item{border-left:3px solid #999;padding-left:3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -144,6 +161,14 @@ h3{margin:12px 0 6px;font-size:15px}
 
   <div id="panel" class="oculto">
     <div id="badge-admin" class="oculto muted" style="margin:4px 0 10px">Modo administrador: gestionas los atletas de la cuenta principal</div>
+    <nav class="tabs-t">
+      <button class="tabt on" data-tab="atletas">Atletas</button>
+      <button class="tabt" data-tab="ficha">Ficha</button>
+      <button class="tabt" data-tab="biblio">Biblioteca</button>
+      <button class="tabt" data-tab="planes">Planes</button>
+    </nav>
+
+    <section class="secc on" data-sec="atletas">
     <div class="card">
       <div class="cab">Nuevo atleta</div>
       <input id="nombre" placeholder="Nombre">
@@ -156,9 +181,21 @@ h3{margin:12px 0 6px;font-size:15px}
       <div id="lista"></div>
     </div>
 
+    </section>
+
+    <section class="secc" data-sec="ficha">
     <div id="ficha" class="card oculto">
       <div class="cab" id="ficha-nombre"></div>
+      <nav class="subs">
+        <button class="subt on" data-sub="calendario">Calendario</button>
+        <button class="subt" data-sub="tests">Tests y plan</button>
+        <button class="subt" data-sub="zonas">Zonas</button>
+        <button class="subt" data-sub="perfil">Perfil</button>
+        <button class="subt" data-sub="mensajes">Mensajes</button>
+        <button class="subt" data-sub="cuenta">Cuenta</button>
+      </nav>
 
+<div class="subsec" data-sub="cuenta">
       <h3>Cuenta de acceso</h3>
       <div class="muted" id="acceso-estado"></div>
       <div class="row">
@@ -166,15 +203,19 @@ h3{margin:12px 0 6px;font-size:15px}
         <button id="btn-acceso" class="sec">Guardar y liberar</button>
       </div>
       <div class="row">
-        <button id="btn-asignar" class="gold oculto">Asignarme este atleta</button>
+        <button id="btn-asignar-atleta" class="gold oculto">Asignarme este atleta</button>
       </div>
       <div class="row" style="margin-top:10px">
         <button id="btn-borrar-atleta" class="sec" style="color:#b00020">Eliminar atleta</button>
       </div>
 
+</div>
+<div class="subsec" data-sub="perfil">
       <h3>Perfil del atleta</h3>
       <div id="perfil-resumen" class="muted"></div>
 
+</div>
+<div class="subsec" data-sub="zonas">
       <h3>Zonas</h3>
       <div class="row">
         <select id="zona-tipo"><option value="fc">FC</option><option value="ritmo">Ritmo</option></select>
@@ -187,6 +228,8 @@ h3{margin:12px 0 6px;font-size:15px}
       <button id="btn-zona">Guardar zona</button>
       <div id="zonas"></div>
 
+</div>
+<div class="subsec" data-sub="tests">
       <h3>Tests</h3>
       <div class="row">
         <select id="test-tipo"><option value="5k">5 km (mm:ss)</option><option value="cooper">Cooper 12 min (metros)</option></select>
@@ -211,6 +254,8 @@ h3{margin:12px 0 6px;font-size:15px}
       <h3>Métricas</h3>
       <div id="metricas-t" class="muted" style="white-space:pre-line"></div>
 
+</div>
+<div class="subsec" data-sub="mensajes">
       <h3>Acceso y mensajes</h3>
       <label class="ver"><input type="checkbox" id="ver-biblio-atleta"> Puede ver la biblioteca de sesiones</label>
       <div id="chat-t-msgs" class="chat"></div>
@@ -219,11 +264,14 @@ h3{margin:12px 0 6px;font-size:15px}
         <button id="chat-t-enviar" class="mini">Enviar</button>
       </div>
 
+</div>
+<div class="subsec on" data-sub="calendario">
       <h3>Calendario</h3>
       <div class="nav">
         <button id="semana-ant" class="sec">←</button>
         <span id="semana-rango"></span>
         <button id="semana-sig" class="sec">→</button>
+        <button id="btn-vista" class="sec">Ver mes</button>
       </div>
       <div class="row" style="margin-top:12px">
         <select id="cal-lib"></select>
@@ -232,8 +280,11 @@ h3{margin:12px 0 6px;font-size:15px}
       <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
       <button id="btn-asignar">Añadir al calendario</button>
       <div id="semana"></div>
+</div>
     </div>
+    </section>
 
+    <section class="secc" data-sec="biblio">
     <div class="card">
       <div class="cab">Biblioteca de sesiones</div>
       <input id="s-nombre" placeholder="Nombre (ej. Series 6x800)">
@@ -267,7 +318,9 @@ h3{margin:12px 0 6px;font-size:15px}
       </select>
       <div id="biblioteca"></div>
     </div>
+    </section>
 
+    <section class="secc" data-sec="planes">
     <div class="card">
       <div class="cab">Planes por nivel (12 semanas, 3 días a la semana)</div>
       <div class="row">
@@ -281,6 +334,7 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <div id="plan-vista"></div>
     </div>
+    </section>
   </div>
   <div id="pendiente" class="card oculto">
     <div class="cab">Cuenta pendiente</div>
@@ -294,6 +348,7 @@ h3{margin:12px 0 6px;font-size:15px}
         <button id="semana-ant-a" class="sec">←</button>
         <span id="semana-rango-a"></span>
         <button id="semana-sig-a" class="sec">→</button>
+        <button id="btn-vista-a" class="sec">Ver mes</button>
       </div>
       <div id="semana-a"></div>
     </div>
@@ -627,6 +682,7 @@ async function comprobarAdmin(uid) {
 
 function modoEntrenador() {
   modoAtletaActivo = false;
+  mostrarTab('atletas');
   $('pendiente').classList.add('oculto');
   comprobarAdmin(miUserId);
   $('panel').classList.remove('oculto');
@@ -753,12 +809,12 @@ $('btn-acceso').onclick = async () => {
   alert('Listo. Cuando esa persona se registre con este email, su cuenta quedará vinculada a esta ficha.');
 };
 
-$('btn-asignar').onclick = async () => {
+$('btn-asignar-atleta').onclick = async () => {
   const { error } = await sb.from('atletas')
     .update({ entrenador_id: miUserId }).eq('id', atletaActual.id);
   if (error) return alert(error.message);
   atletaActual.entrenador_id = miUserId;
-  $('btn-asignar').classList.add('oculto');
+  $('btn-asignar-atleta').classList.add('oculto');
   cargarAtletas();
   alert('Atleta asignado a tu cuenta.');
 };
@@ -781,8 +837,8 @@ $('btn-borrar-atleta').onclick = async () => {
 };
 
 $('det-cerrar').onclick = () => $('detalle-atleta').classList.add('oculto');
-$('semana-ant-a').onclick = () => { semanaInicio = sumarDias(semanaInicio, -7); cargarSemana(); };
-$('semana-sig-a').onclick = () => { semanaInicio = sumarDias(semanaInicio, 7); cargarSemana(); };
+$('semana-ant-a').onclick = () => moverCalendario(-1);
+$('semana-sig-a').onclick = () => moverCalendario(1);
 $('ver-biblio-atleta').onchange = async () => {
   const { error } = await sb.from('atletas')
     .update({ ve_biblioteca: $('ver-biblio-atleta').checked }).eq('id', atletaActual.id);
@@ -921,13 +977,15 @@ async function cargarAtletas() {
 
 function abrirFicha(atleta) {
   atletaActual = atleta;
+  mostrarTab('ficha');
+  mostrarSub('calendario');
   $('ficha').classList.remove('oculto');
   $('ficha-nombre').textContent = atleta.nombre;
   semanaInicio = lunesDe(new Date());
   if (atleta.nivel) $('aplicar-nivel').value = atleta.nivel;
   $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
   $('acceso-email').value = atleta.email || '';
-  $('btn-asignar').classList.toggle('oculto', !!atleta.entrenador_id);
+  $('btn-asignar-atleta').classList.toggle('oculto', !!atleta.entrenador_id);
   $('acceso-estado').textContent = atleta.user_id
     ? 'Vinculada a una cuenta registrada'
     : 'Sin cuenta: se vinculará al registrarse con este email';
@@ -1087,15 +1145,8 @@ async function borrarSesion(id) {
 
 /* ---------- CALENDARIO SEMANAL ---------- */
 
-$('semana-ant').onclick = () => {
-  semanaInicio = sumarDias(semanaInicio, -7);
-  cargarSemana();
-};
-
-$('semana-sig').onclick = () => {
-  semanaInicio = sumarDias(semanaInicio, 7);
-  cargarSemana();
-};
+$('semana-ant').onclick = () => moverCalendario(-1);
+$('semana-sig').onclick = () => moverCalendario(1);
 
 $('btn-asignar').onclick = async () => {
   const libId = $('cal-lib').value;
@@ -1119,7 +1170,96 @@ $('btn-asignar').onclick = async () => {
 
 const COLORES = { rodaje: '#2e7d32', series: '#c0392b', tirada: '#1565c0', fuerza: '#6a1b9a', bici: '#e67e22', otro: '#607d8b' };
 
+let vistaMes = false;
+let mesActual = new Date();
+
+function mostrarTab(id) {
+  document.querySelectorAll('.secc').forEach(x => x.classList.toggle('on', x.dataset.sec === id));
+  document.querySelectorAll('.tabt').forEach(x => x.classList.toggle('on', x.dataset.tab === id));
+}
+function mostrarSub(id) {
+  document.querySelectorAll('.subsec').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
+  document.querySelectorAll('.subt').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
+}
+document.querySelectorAll('.tabt').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
+document.querySelectorAll('.subt').forEach(b => b.onclick = () => mostrarSub(b.dataset.sub));
+
+function moverCalendario(dir) {
+  if (vistaMes) mesActual = new Date(mesActual.getFullYear(), mesActual.getMonth() + dir, 1);
+  else semanaInicio = sumarDias(semanaInicio, 7 * dir);
+  cargarSemana();
+}
+
+function alternarVista() {
+  vistaMes = !vistaMes;
+  mesActual = new Date(semanaInicio.getFullYear(), semanaInicio.getMonth(), 1);
+  const txt = vistaMes ? 'Ver semana' : 'Ver mes';
+  $('btn-vista').textContent = txt;
+  $('btn-vista-a').textContent = txt;
+  cargarSemana();
+}
+$('btn-vista').onclick = alternarVista;
+$('btn-vista-a').onclick = alternarVista;
+
+async function cargarMes() {
+  const ini = mesActual;
+  const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 0);
+  const sufijo = modoAtletaActivo ? '-a' : '';
+  $('semana-rango' + sufijo).textContent = ini.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+  const { data, error } = await sb.from('sesiones_planificadas').select('*')
+    .eq('atleta_id', atletaActual.id).gte('fecha', iso(ini)).lte('fecha', iso(fin)).order('fecha');
+  if (error) return alert(error.message);
+
+  const cont = $('semana' + sufijo);
+  cont.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'mes-grid';
+  ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'mes-head';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const primero = lunesDe(ini);
+  for (let i = 0; i < 42; i++) {
+    const dia = sumarDias(primero, i);
+    const celda = document.createElement('div');
+    celda.className = 'mes-celda' + (dia.getMonth() !== ini.getMonth() ? ' fuera' : '');
+    const num = document.createElement('div');
+    num.className = 'mes-num';
+    num.textContent = dia.getDate();
+    celda.appendChild(num);
+
+    const delDia = data.filter(p => p.fecha === iso(dia));
+    delDia.slice(0, 3).forEach(p => {
+      const t = document.createElement('div');
+      t.className = 'mes-item';
+      t.style.borderLeftColor = (typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999';
+      t.textContent = (p.descripcion || p.tipo || '').split(' — ')[0];
+      celda.appendChild(t);
+    });
+    if (delDia.length > 3) {
+      const m = document.createElement('div');
+      m.className = 'muted';
+      m.textContent = `+${delDia.length - 3} más`;
+      celda.appendChild(m);
+    }
+    celda.onclick = () => {
+      semanaInicio = lunesDe(dia);
+      vistaMes = false;
+      $('btn-vista').textContent = 'Ver mes';
+      $('btn-vista-a').textContent = 'Ver mes';
+      cargarSemana();
+    };
+    grid.appendChild(celda);
+  }
+  cont.appendChild(grid);
+}
+
 async function cargarSemana() {
+  if (vistaMes) return cargarMes();
   const inicio = iso(semanaInicio);
   const fin = iso(sumarDias(semanaInicio, 6));
   $('semana-rango' + (modoAtletaActivo ? '-a' : '')).textContent = `${inicio} → ${fin}`;
