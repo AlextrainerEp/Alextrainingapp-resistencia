@@ -203,7 +203,7 @@ h3{margin:12px 0 6px;font-size:15px}
 
   <div id="panel" class="oculto">
     <div id="badge-admin" class="oculto muted" style="margin:4px 0 10px">Modo administrador: gestionas los atletas de la cuenta principal</div>
-    <nav class="tabs-t">
+    <nav class="tabs-t" id="tabs-t">
       <button class="tabt on" data-tab="atletas">Atletas</button>
       <button class="tabt" data-tab="ficha">Ficha</button>
       <button class="tabt" data-tab="biblio">Biblioteca</button>
@@ -385,16 +385,15 @@ h3{margin:12px 0 6px;font-size:15px}
   </div>
 
   <div id="vista-atleta" class="oculto">
-    <div id="resumen-atleta" class="card"></div>
-
-    <nav class="tabs-a">
-      <button class="taba on" data-ta="cal">Calendario</button>
-      <button class="taba" data-ta="hist">Historial</button>
-      <button class="taba" data-ta="carga">Carga</button>
-      <button class="taba" data-ta="prog">Progreso</button>
-      <button class="taba" data-ta="perfil">Perfil</button>
-      <button class="taba" data-ta="msg">Mensajes</button>
+    <nav class="tabs-t" id="tabs-a">
+      <button class="tabt on" data-ta="cal">Calendario</button>
+      <button class="tabt" data-ta="hist">Historial</button>
+      <button class="tabt" data-ta="carga">Carga</button>
+      <button class="tabt" data-ta="prog">Progreso</button>
+      <button class="tabt" data-ta="perfil">Perfil</button>
+      <button class="tabt" data-ta="msg">Mensajes</button>
     </nav>
+    <div id="resumen-atleta" class="card"></div>
 
     <section class="seca on" data-sa="cal">
       <div class="card">
@@ -860,9 +859,9 @@ let datosAtleta = { sesiones: [], tests: [], metricas: [], perfil: null };
 
 function mostrarTabA(id) {
   document.querySelectorAll('.seca').forEach(x => x.classList.toggle('on', x.dataset.sa === id));
-  document.querySelectorAll('.taba').forEach(x => x.classList.toggle('on', x.dataset.ta === id));
+  document.querySelectorAll('#tabs-a .tabt').forEach(x => x.classList.toggle('on', x.dataset.ta === id));
 }
-document.querySelectorAll('.taba').forEach(b => b.onclick = () => mostrarTabA(b.dataset.ta));
+document.querySelectorAll('#tabs-a .tabt').forEach(b => b.onclick = () => mostrarTabA(b.dataset.ta));
 
 function cargaSesion(p) {
   return p.rpe ? (Number(p.duracion_min) || 0) * p.rpe : 0;
@@ -1631,13 +1630,13 @@ $('banner-cancelar').onclick = cancelarSeleccion;
 
 function mostrarTab(id) {
   document.querySelectorAll('.secc').forEach(x => x.classList.toggle('on', x.dataset.sec === id));
-  document.querySelectorAll('.tabt').forEach(x => x.classList.toggle('on', x.dataset.tab === id));
+  document.querySelectorAll('#tabs-t .tabt').forEach(x => x.classList.toggle('on', x.dataset.tab === id));
 }
 function mostrarSub(id) {
   document.querySelectorAll('.subsec').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
   document.querySelectorAll('.subt').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
 }
-document.querySelectorAll('.tabt').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
+document.querySelectorAll('#tabs-t .tabt').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
 document.querySelectorAll('.subt').forEach(b => b.onclick = () => mostrarSub(b.dataset.sub));
 
 function moverCalendario(dir) {
