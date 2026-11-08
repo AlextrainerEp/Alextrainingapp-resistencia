@@ -127,9 +127,11 @@ h3{margin:12px 0 6px;font-size:15px}
     <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Contraseña">
     <label class="ver"><input type="checkbox" id="ver-pass"> Mostrar contraseña</label>
-    <button id="btn-login" class="gold">Entrar</button>
+    <div class="row">
+      <button id="btn-login" class="gold">Entrar</button>
+      <button id="btn-registro" class="sec">Crear cuenta</button>
+    </div>
     <button id="btn-olvido" class="link">He olvidado la contraseña</button>
-    <button id="btn-registro" class="link">Crear cuenta nueva</button>
     <p id="error" class="msg err" style="display:none"></p>
   </div>
 
@@ -442,8 +444,7 @@ async function mostrarSegunSesion() {
     return;
   }
   miUserId = session.user.id;
-  const email = (session.user.email || '').toLowerCase();
-  const esEntrenador = email === EMAIL_ENTRENADOR || await esAdminCuenta(miUserId);
+  const esEntrenador = await esAdminCuenta(miUserId);
   if (esEntrenador) return modoEntrenador();
   const atleta = await buscarFichaAtleta(miUserId, session.user.email);
   if (atleta && atleta.entrenador_id) return modoAtleta(atleta);
@@ -473,11 +474,10 @@ async function buscarFichaAtleta(uid, email) {
 }
 
 let esAdmin = false;
-const EMAIL_ENTRENADOR = 'noko65@hotmail.com';
 
 async function esAdminCuenta(uid) {
-  const { data } = await sb.from('admins').select('user_id').eq('user_id', uid).limit(1);
-  return !!(data && data.length);
+  const { data } = await sb.from('perfiles').select('rol').eq('id', uid).maybeSingle();
+  return !!(data && data.rol === 'admin');
 }
 
 function modoPendiente() {
