@@ -92,6 +92,17 @@ h3{margin:12px 0 6px;font-size:15px}
 .vacio-dia{color:#888;font-size:12px;text-align:center;margin-top:8px}
 
 .oculto{display:none!important}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto;padding:6px 2px;margin-bottom:8px}
+.burbuja{max-width:85%;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.85)}
+.burbuja.mia{align-self:flex-end;background:#d9dde0}
+.burbuja.suya{align-self:flex-start}
+.burbuja small{display:block;color:#555;font-size:11px;margin-bottom:2px}
+.burbuja div{font-size:14px;white-space:pre-line}
+#vista-atleta .semana-grid{grid-template-columns:repeat(7,minmax(150px,1fr))}
+#vista-atleta .tarjeta{font-size:15px;padding:10px;cursor:pointer}
+#vista-atleta .tarjeta .tit{font-size:15px}
+#vista-atleta .dia-head{font-size:14px}
+#vista-atleta .dia-head b{font-size:15px}
 .ver{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 0 8px;cursor:pointer}
 .ver input{width:auto;margin:0}
 
@@ -177,6 +188,14 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <button id="btn-aplicar">Aplicar plan al atleta</button>
 
+      <h3>Acceso y mensajes</h3>
+      <label class="ver"><input type="checkbox" id="ver-biblio-atleta"> Puede ver la biblioteca de sesiones</label>
+      <div id="chat-t-msgs" class="chat"></div>
+      <div class="row">
+        <textarea id="chat-t-txt" rows="2" placeholder="Escribe un mensaje al atleta"></textarea>
+        <button id="chat-t-enviar" class="mini">Enviar</button>
+      </div>
+
       <h3>Calendario</h3>
       <div class="nav">
         <button id="semana-ant" class="sec">←</button>
@@ -240,6 +259,45 @@ h3{margin:12px 0 6px;font-size:15px}
       <div id="plan-vista"></div>
     </div>
   </div>
+  <div id="vista-atleta" class="oculto">
+    <div class="card">
+      <div class="cab">Mi calendario</div>
+      <div class="nav">
+        <button id="semana-ant-a" class="sec">←</button>
+        <span id="semana-rango-a"></span>
+        <button id="semana-sig-a" class="sec">→</button>
+      </div>
+      <div id="semana-a"></div>
+    </div>
+
+    <div id="detalle-atleta" class="card oculto">
+      <div class="cab" id="det-titulo"></div>
+      <div class="muted" id="det-meta"></div>
+      <p id="det-texto" style="white-space:pre-line;font-size:15px;line-height:1.5"></p>
+      <div class="row">
+        <select id="det-estado">
+          <option value="pendiente">pendiente</option>
+          <option value="hecha">hecha</option>
+          <option value="omitida">omitida</option>
+        </select>
+        <button id="det-cerrar" class="sec">Cerrar</button>
+      </div>
+    </div>
+
+    <div id="biblio-atleta" class="card oculto">
+      <div class="cab">Biblioteca de sesiones</div>
+      <div id="biblio-atleta-lista"></div>
+    </div>
+
+    <div class="card">
+      <div class="cab">Mensajes con tu entrenador</div>
+      <div id="chat-a-msgs" class="chat"></div>
+      <div class="row">
+        <textarea id="chat-a-txt" rows="2" placeholder="Escribe un mensaje"></textarea>
+        <button id="chat-a-enviar" class="mini">Enviar</button>
+      </div>
+    </div>
+  </div>
 </main>
 
 <script type="module">
@@ -279,10 +337,16 @@ function iso(d) {
 
 /* ---------- SESIÓN Y LOGIN ---------- */
 
+let miUserId = null;
+let miAtleta = null;
+let modoAtletaActivo = false;
+const chatTimers = {};
+
 async function mostrarSegunSesion() {
   if (window.location.hash.includes('type=recovery')) {
     $('login').classList.add('oculto');
     $('panel').classList.add('oculto');
+    $('vista-atleta').classList.add('oculto');
     $('hdr').classList.add('oculto');
     $('nueva-pass').classList.remove('oculto');
     return;
@@ -290,13 +354,134 @@ async function mostrarSegunSesion() {
   $('nueva-pass').classList.add('oculto');
   const { data: { session } } = await sb.auth.getSession();
   $('login').classList.toggle('oculto', !!session);
-  $('panel').classList.toggle('oculto', !session);
   $('hdr').classList.toggle('oculto', !session);
-  if (session) {
-    cargarAtletas();
-    cargarBiblioteca();
-    $('cal-fecha').value = iso(new Date());
+  if (!session) {
+    $('panel').classList.add('oculto');
+    $('vista-atleta').classList.add('oculto');
+    return;
   }
+  miUserId = session.user.id;
+  const atleta = await buscarFichaAtleta(miUserId, session.user.email);
+  if (atleta) modoAtleta(atleta); else modoEntrenador();
+}
+
+async function buscarFichaAtleta(uid, email) {
+  const { data: mias } = await sb.from('atletas').select('*').eq('user_id', uid).limit(1);
+  if (mias && mias.length) return mias[0];
+  const { data: propias } = await sb.from('atletas').select('id').eq('entrenador_id', uid).limit(1);
+  if (propias && propias.length) return null;
+  const { data: libres } = await sb.from('atletas').select('*')
+    .is('user_id', null).ilike('email', email).limit(1);
+  if (libres && libres.length) {
+    const { data: reclamada, error } = await sb.from('atletas')
+      .update({ user_id: uid }).eq('id', libres[0].id).select().single();
+    if (!error) return reclamada;
+  }
+  return null;
+}
+
+function modoEntrenador() {
+  modoAtletaActivo = false;
+  $('panel').classList.remove('oculto');
+  $('vista-atleta').classList.add('oculto');
+  cargarAtletas();
+  cargarBiblioteca();
+  $('cal-fecha').value = iso(new Date());
+}
+
+async function modoAtleta(a) {
+  modoAtletaActivo = true;
+  miAtleta = a;
+  atletaActual = a;
+  $('panel').classList.add('oculto');
+  $('vista-atleta').classList.remove('oculto');
+  $('biblio-atleta').classList.toggle('oculto', !a.ve_biblioteca);
+  if (a.ve_biblioteca) cargarBibliotecaAtleta();
+  semanaInicio = lunesDe(new Date());
+  cargarSemana();
+  activarChat('chat-a', a.id, miUserId);
+}
+
+async function cargarBibliotecaAtleta() {
+  const { data, error } = await sb.from('sesiones_biblioteca').select('*').order('nombre');
+  if (error) return alert(error.message);
+  const box = $('biblio-atleta-lista');
+  box.innerHTML = '';
+  data.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'atleta';
+    const t = document.createElement('strong');
+    t.textContent = s.nombre;
+    const m = document.createElement('div');
+    m.className = 'muted';
+    m.textContent = `${s.nivel || ''} · ${s.tipo || ''} · ${s.duracion_min ?? '-'} min`;
+    const x = document.createElement('div');
+    x.style.whiteSpace = 'pre-line';
+    x.textContent = s.descripcion || '';
+    d.append(t, m, x);
+    box.appendChild(d);
+  });
+}
+
+function mostrarDetalle(p) {
+  const partes = (p.descripcion || '').split(' — ');
+  $('det-titulo').textContent = partes[0] || p.tipo || 'Sesión';
+  $('det-meta').textContent = `${p.fecha} · ${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
+  $('det-texto').textContent = partes.slice(1).join(' — ') || 'Sin explicación adicional.';
+  $('det-estado').value = p.estado || 'pendiente';
+  $('det-estado').onchange = async () => {
+    const { error } = await sb.from('sesiones_planificadas')
+      .update({ estado: $('det-estado').value }).eq('id', p.id);
+    if (error) return alert(error.message);
+    cargarSemana();
+  };
+  $('detalle-atleta').classList.remove('oculto');
+  $('detalle-atleta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+$('det-cerrar').onclick = () => $('detalle-atleta').classList.add('oculto');
+$('semana-ant-a').onclick = () => { semanaInicio = sumarDias(semanaInicio, -7); cargarSemana(); };
+$('semana-sig-a').onclick = () => { semanaInicio = sumarDias(semanaInicio, 7); cargarSemana(); };
+$('ver-biblio-atleta').onchange = async () => {
+  const { error } = await sb.from('atletas')
+    .update({ ve_biblioteca: $('ver-biblio-atleta').checked }).eq('id', atletaActual.id);
+  if (error) alert(error.message);
+};
+
+/* ---------- MENSAJES ---------- */
+
+async function cargarMensajes(pref, atletaId, miId) {
+  const { data, error } = await sb.from('mensajes').select('*')
+    .eq('atleta_id', atletaId).order('created_at');
+  if (error) return;
+  const box = $(pref + '-msgs');
+  box.innerHTML = '';
+  data.forEach(m => {
+    const b = document.createElement('div');
+    b.className = 'burbuja ' + (m.autor_id === miId ? 'mia' : 'suya');
+    const hora = document.createElement('small');
+    hora.textContent = new Date(m.created_at).toLocaleString('es-ES',
+      { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const txt = document.createElement('div');
+    txt.textContent = m.texto;
+    b.append(hora, txt);
+    box.appendChild(b);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function activarChat(pref, atletaId, miId) {
+  $(pref + '-enviar').onclick = async () => {
+    const texto = $(pref + '-txt').value.trim();
+    if (!texto) return;
+    const { error } = await sb.from('mensajes').insert({ atleta_id: atletaId, autor_id: miId, texto });
+    if (error) return alert(error.message);
+    $(pref + '-txt').value = '';
+    cargarMensajes(pref, atletaId, miId);
+  };
+  cargarMensajes(pref, atletaId, miId);
+  clearInterval(chatTimers[pref]);
+  chatTimers[pref] = setInterval(() => cargarMensajes(pref, atletaId, miId), 10000);
 }
 
 $('btn-login').onclick = async () => {
@@ -369,7 +554,7 @@ $('btn-crear').onclick = async () => {
 };
 
 async function cargarAtletas() {
-  const { data, error } = await sb.from('atletas').select('id, nombre').order('nombre');
+  const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca').order('nombre');
   if (error) return alert(error.message);
   $('lista').innerHTML = '';
   data.forEach(a => {
@@ -387,6 +572,8 @@ function abrirFicha(atleta) {
   $('ficha-nombre').textContent = atleta.nombre;
   semanaInicio = lunesDe(new Date());
   if (atleta.nivel) $('aplicar-nivel').value = atleta.nivel;
+  $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
+  activarChat('chat-t', atleta.id, miUserId);
   cargarZonas();
   cargarTests();
   cargarSemana();
@@ -575,7 +762,7 @@ const COLORES = { rodaje: '#2e7d32', series: '#c0392b', tirada: '#1565c0', fuerz
 async function cargarSemana() {
   const inicio = iso(semanaInicio);
   const fin = iso(sumarDias(semanaInicio, 6));
-  $('semana-rango').textContent = `${inicio} → ${fin}`;
+  $('semana-rango' + (modoAtletaActivo ? '-a' : '')).textContent = `${inicio} → ${fin}`;
 
   const { data, error } = await sb.from('sesiones_planificadas')
     .select('*')
@@ -588,11 +775,11 @@ async function cargarSemana() {
   const totalMin = data.reduce((a, p) => a + (p.duracion_min || 0), 0);
   const hechas = data.filter(p => p.estado === 'hecha').length;
 
-  $('semana').innerHTML = '';
+  $('semana' + (modoAtletaActivo ? '-a' : '')).innerHTML = '';
   const resumen = document.createElement('div');
   resumen.className = 'resumen-semana';
   resumen.textContent = `${data.length} sesiones · ${(totalMin / 60).toFixed(1)} h · ${hechas} hechas`;
-  $('semana').appendChild(resumen);
+  $('semana' + (modoAtletaActivo ? '-a' : '')).appendChild(resumen);
 
   const grid = document.createElement('div');
   grid.className = 'semana-grid';
@@ -622,7 +809,7 @@ async function cargarSemana() {
     col.append(head, body);
     grid.appendChild(col);
   }
-  $('semana').appendChild(grid);
+  $('semana' + (modoAtletaActivo ? '-a' : '')).appendChild(grid);
 }
 
 function tarjetaSesion(p) {
@@ -637,6 +824,12 @@ function tarjetaSesion(p) {
   const det = document.createElement('div');
   det.className = 'det';
   det.textContent = `${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
+
+  if (modoAtletaActivo) {
+    card.onclick = () => mostrarDetalle(p);
+    card.append(tit, det);
+    return card;
+  }
 
   const acc = document.createElement('div');
   acc.className = 'acc';
