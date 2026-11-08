@@ -13,11 +13,11 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d1f21;background:#b9bcbe}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d1f21;background:#909398}
 /* Logo de fondo y frase, como en la app de Alex Training Lab */
 .fondo{position:fixed;inset:0;background:#b9bcbe url("logo-fondo.png") no-repeat center 84px/min(80vw,600px) auto;z-index:-1}
 .frase{position:absolute;left:0;right:0;top:calc(84px + min(80vw,600px)*0.37 + 12px);margin:0;padding:0 16px;text-align:center;font-size:18px;line-height:1.4;font-style:italic;color:#111;max-width:640px;margin-inline:auto}
-.frase .autor{display:block;margin-top:6px;font-style:normal;font-size:15px;font-weight:700;color:#8a6508}
+.frase .autor{display:block;margin-top:6px;font-style:normal;font-size:15px;font-weight:700;color:#e0b43a;text-shadow:0 1px 2px rgba(0,0,0,.45)}
 
 /* Cabecera igual que la app de Alex Training Lab */
 header{background:#2e3133;color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
@@ -29,8 +29,9 @@ main{max-width:980px;margin:0 auto;padding:calc(84px + min(80vw,600px)*0.37 + 90
 
 /* Tarjetas translúcidas */
 .card{background:rgba(255,255,255,.62);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.login{max-width:440px;margin:0 auto}
-.login h2{margin-top:0}
+.login{max-width:440px;margin:0 auto;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0}
+.login label,.login .muted{color:#1d1f21}
+.entrada{display:block;width:min(92%,420px);height:auto;margin:0 auto 18px}
 
 /* Formularios */
 input,select,textarea{width:100%;padding:10px;border:1px solid #bbb;border-radius:8px;font:inherit;margin:4px 0 10px;background:#fff}
@@ -95,11 +96,11 @@ h3{margin:12px 0 6px;font-size:15px}
 
 <main>
   <div id="login" class="card login">
-    <h2>Entrar</h2>
+    <img class="entrada" src="logo-login.png" alt="Alex Training Lab" onerror="this.remove()">
     <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Contraseña">
     <label class="ver"><input type="checkbox" id="ver-pass"> Mostrar contraseña</label>
-    <button id="btn-login">Entrar</button>
+    <button id="btn-login" class="gold">Entrar</button>
     <button id="btn-olvido" class="sec">He olvidado la contraseña</button>
     <p id="error" class="msg err" style="display:none"></p>
   </div>
