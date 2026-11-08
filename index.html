@@ -132,6 +132,24 @@ h3{margin:12px 0 6px;font-size:15px}
 .mes-item{cursor:grab}
 .tarjeta[draggable="true"]{cursor:grab}
 .mover-btn{width:auto;margin-left:6px;padding:2px 8px;border-radius:6px;background:#e3e6e8;color:#1d1f21;border:0;font-size:13px;cursor:pointer}
+
+.nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:100%}
+.nav #semana-rango,.nav #semana-rango-a{flex:1 1 100%;text-align:center;order:-1}
+.nav button{width:auto;flex:0 0 auto}
+.card{max-width:100%;overflow-x:hidden}
+
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:6px 0}
+.leg{display:flex;align-items:center;gap:4px}
+.leg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.tarjeta{border-left-width:6px}
+.mes-item{border-radius:3px;padding-right:2px}
+
+.modal-grande{max-height:85vh;overflow:auto}
+.dia-lista{max-height:40vh;overflow:auto;margin:8px 0}
+.dia-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee}
+.dia-item button{width:auto}
+#dia-nueva-form{display:grid;gap:6px;margin-top:8px}
+#dia-nueva-form.oculto{display:none}
 </style>
 </head>
 <body>
@@ -288,6 +306,7 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
       <button id="btn-asignar">Añadir al calendario</button>
+      <div class="leyenda" data-leyenda></div>
       <div id="semana"></div>
 </div>
     </div>
@@ -359,6 +378,7 @@ h3{margin:12px 0 6px;font-size:15px}
         <button id="semana-sig-a" class="sec">→</button>
         <button id="btn-vista-a" class="sec">Ver mes</button>
       </div>
+      <div class="leyenda" data-leyenda></div>
       <div id="semana-a"></div>
     </div>
 
@@ -1177,13 +1197,97 @@ $('btn-asignar').onclick = async () => {
   cargarSemana();
 };
 
-const COLORES = { rodaje: '#2e7d32', series: '#c0392b', tirada: '#1565c0', fuerza: '#6a1b9a', bici: '#e67e22', otro: '#607d8b' };
+const COLORES = { rodaje: '#1976d2', series: '#d32f2f', tirada: '#2e7d32', fuerza: '#7b1fa2', bici: '#f57c00', otro: '#607d8b' };
+const NOMBRES_TIPO = { rodaje: 'Rodaje', series: 'Series', tirada: 'Tirada larga', fuerza: 'Fuerza', bici: 'Bici', otro: 'Otro' };
+document.querySelectorAll('[data-leyenda]').forEach(el => {
+  el.innerHTML = Object.keys(COLORES).map(k =>
+    `<span class="leg"><i style="background:${COLORES[k]}"></i>${NOMBRES_TIPO[k]}</span>`).join('');
+});
 
 let vistaMes = false;
 let mesActual = new Date();
 let arrastrando = null;
 let seleccion = null;
 let pendienteMover = null;
+
+let diaSeleccionado = null;
+let bibliotecaDia = [];
+
+function cerrarPickerDia() {
+  $('modal-dia').classList.add('oculto');
+}
+
+async function abrirPickerDia(dia) {
+  diaSeleccionado = dia;
+  $('dia-titulo').textContent = 'Añadir el ' + dia.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('dia-nueva-form').classList.add('oculto');
+  $('dia-buscar').value = '';
+  $('modal-dia').classList.remove('oculto');
+  const { data, error } = await sb.from('sesiones_biblioteca').select('*').order('nombre');
+  if (error) return alert(error.message);
+  bibliotecaDia = data || [];
+  pintarBibliotecaDia();
+}
+
+function pintarBibliotecaDia() {
+  const q = $('dia-buscar').value.trim().toLowerCase();
+  const box = $('dia-lista');
+  box.innerHTML = '';
+  const lista = bibliotecaDia.filter(x => !q || (x.nombre || '').toLowerCase().includes(q));
+  if (!lista.length) {
+    box.textContent = 'No hay sesiones en la biblioteca con ese nombre.';
+    return;
+  }
+  lista.forEach(x => {
+    const row = document.createElement('div');
+    row.className = 'dia-item';
+    const txt = document.createElement('div');
+    const t = document.createElement('strong');
+    t.textContent = x.nombre;
+    const m = document.createElement('div');
+    m.className = 'muted';
+    m.textContent = `${x.nivel || ''} · ${x.tipo || ''} · ${x.duracion_min ?? '-'} min`;
+    txt.append(t, m);
+    const b = document.createElement('button');
+    b.className = 'mini';
+    b.textContent = 'Añadir';
+    b.onclick = () => ponerEnDia(x);
+    row.append(txt, b);
+    box.appendChild(row);
+  });
+}
+
+async function ponerEnDia(x) {
+  const { error } = await sb.from('sesiones_planificadas').insert({
+    atleta_id: atletaActual.id,
+    fecha: iso(diaSeleccionado),
+    tipo: x.tipo,
+    descripcion: x.nombre + (x.descripcion ? ' — ' + x.descripcion : ''),
+    duracion_min: x.duracion_min
+  });
+  if (error) return alert(error.message);
+  cerrarPickerDia();
+  cargarSemana();
+}
+
+$('dia-buscar').oninput = pintarBibliotecaDia;
+$('dia-cerrar').onclick = cerrarPickerDia;
+$('dia-nueva').onclick = () => $('dia-nueva-form').classList.toggle('oculto');
+$('dn-guardar').onclick = async () => {
+  const nombre = $('dn-nombre').value.trim();
+  if (!nombre) return alert('Escribe un nombre para la sesión.');
+  const { data, error } = await sb.from('sesiones_biblioteca').insert({
+    entrenador_id: miUserId,
+    nombre,
+    nivel: $('dn-nivel').value,
+    tipo: $('dn-tipo').value,
+    duracion_min: Number($('dn-duracion').value) || null,
+    descripcion: $('dn-descripcion').value.trim() || null
+  }).select().single();
+  if (error) return alert(error.message);
+  bibliotecaDia.push(data);
+  await ponerEnDia(data);
+};
 
 function iniciarMover(p) {
   seleccion = p;
@@ -1291,6 +1395,7 @@ async function cargarMes() {
       const t = document.createElement('div');
       t.className = 'mes-item';
       t.style.borderLeftColor = (typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999';
+      t.style.background = ((typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999') + '26';
       t.textContent = (p.descripcion || p.tipo || '').split(' — ')[0];
       t.draggable = true;
       t.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
@@ -1308,6 +1413,7 @@ async function cargarMes() {
     celda.ondrop = (e) => { e.preventDefault(); soltarEnDia(dia); };
     celda.onclick = () => {
       if (seleccion) return soltarEnDia(dia);
+      if (!modoAtletaActivo) return abrirPickerDia(dia);
       semanaInicio = lunesDe(dia);
       vistaMes = false;
       $('btn-vista').textContent = 'Ver mes';
@@ -1354,7 +1460,10 @@ async function cargarSemana() {
     col.className = 'dia-col';
     col.ondragover = (e) => e.preventDefault();
     col.ondrop = (e) => { e.preventDefault(); soltarEnDia(dia); };
-    col.onclick = () => { if (seleccion) soltarEnDia(dia); };
+    col.onclick = () => {
+      if (seleccion) return soltarEnDia(dia);
+      if (!modoAtletaActivo) abrirPickerDia(dia);
+    };
 
     const head = document.createElement('div');
     head.className = 'dia-head';
@@ -1380,6 +1489,7 @@ function tarjetaSesion(p) {
   const card = document.createElement('div');
   card.className = 'tarjeta' + (p.estado === 'hecha' ? ' hecha' : '');
   card.style.borderLeftColor = COLORES[p.tipo] || '#607d8b';
+  card.style.background = (COLORES[p.tipo] || '#607d8b') + '26';
   card.draggable = true;
   card.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
   card.ondragend = () => { arrastrando = null; };
@@ -1403,6 +1513,7 @@ function tarjetaSesion(p) {
     return card;
   }
 
+  card.onclick = (e) => { if (!seleccion) e.stopPropagation(); };
   const acc = document.createElement('div');
   acc.className = 'acc';
 
@@ -1643,6 +1754,34 @@ mostrarSegunSesion();
       <button id="mover-copiar" class="sec">Copiar</button>
       <button id="mover-no" class="link">Cancelar</button>
     </div>
+  </div>
+</div>
+<div id="modal-dia" class="oculto modal">
+  <div class="modal-caja modal-grande">
+    <div class="cab" id="dia-titulo"></div>
+    <input id="dia-buscar" placeholder="Buscar en la biblioteca">
+    <div id="dia-lista" class="dia-lista"></div>
+    <button id="dia-nueva" class="sec">+ Nueva sesión</button>
+    <div id="dia-nueva-form" class="oculto">
+      <input id="dn-nombre" placeholder="Nombre (ej. Series 6x800)">
+      <select id="dn-nivel">
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
+      <select id="dn-tipo">
+        <option value="rodaje">Rodaje</option>
+        <option value="series">Series</option>
+        <option value="tirada">Tirada larga</option>
+        <option value="fuerza">Fuerza</option>
+        <option value="bici">Bici</option>
+        <option value="otro">Otro</option>
+      </select>
+      <input id="dn-duracion" type="number" min="0" placeholder="Duración (min)">
+      <textarea id="dn-descripcion" rows="2" placeholder="Descripción"></textarea>
+      <button id="dn-guardar">Guardar y añadir a este día</button>
+    </div>
+    <div class="acciones"><button id="dia-cerrar" class="link">Cerrar</button></div>
   </div>
 </div>
 </body>
