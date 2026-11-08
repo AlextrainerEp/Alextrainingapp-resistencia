@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alex Training Lab · Resistencia</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Resistencia">
+<meta name="theme-color" content="#2e3133">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d1f21;background:#2e3133 linear-gradient(160deg,#2e3133 0%,#5b6266 55%,#b9bcbe 100%) fixed;background-size:cover}
+/* Imagen de fondo propia: pon fondo-resistencia.jpg junto a index.html */
+body.con-fondo{background:#2e3133 url("fondo-resistencia.jpg") center/cover fixed}
+.entrada{display:block;width:min(70%,320px);height:auto;margin:0 auto 12px}
+
+/* Cabecera igual que la app de Alex Training Lab */
+header{background:#2e3133;color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+header img.logo{height:44px}
+header .t{flex:1;font-weight:700;color:#D9DDE0}
+header button{width:auto}
+
+main{max-width:980px;margin:0 auto;padding:16px}
+
+/* Tarjetas translúcidas */
+.card{background:rgba(255,255,255,.62);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.login{max-width:440px;margin:40px auto}
+.login h2{margin-top:0}
+
+/* Formularios */
+input,select,textarea{width:100%;padding:10px;border:1px solid #bbb;border-radius:8px;font:inherit;margin:4px 0 10px;background:#fff}
+input[type=checkbox]{width:auto}
+textarea{font-size:14px}
+label{display:block}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+
+/* Botones */
+button{background:#2e3133;color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
+button.sec{background:#ddd;color:#1d1f21}
+button.gold{background:#D9DDE0;color:#1d1f21;font-weight:700}
+button.danger{background:#c0392b}
+button.mini{padding:4px 10px;font-size:13px;margin:0;width:auto}
+
+/* Títulos de sección: franja oscura como en la app */
+.cab{background:#2e3133;color:#D9DDE0;padding:6px 10px;border-radius:8px;margin:12px 0 8px;font-size:15px;font-weight:700}
+h2{margin:0 0 12px;font-size:20px}
+h3{margin:12px 0 6px;font-size:15px}
+.muted{color:#666;font-size:13px}
+.msg{padding:8px 12px;border-radius:8px;margin:8px 0}
+.msg.err{background:#fdecea;color:#c0392b}
+.msg.ok{background:#e8f5e9;color:#2e7d32}
+
+/* Lista de atletas */
+.atleta{padding:10px;border-bottom:1px solid rgba(0,0,0,.12)}
+.clickable{cursor:pointer;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+
+/* Zonas */
+.zona{padding:4px 0;border-bottom:1px solid rgba(0,0,0,.12)}
+
+/* Calendario */
+.nav{display:flex;gap:8px;align-items:center}
+.nav button{width:auto}
+.nav span{flex:1;text-align:center;font-weight:700}
+.dia{background:rgba(255,255,255,.5);border-radius:8px;padding:8px 10px;margin-top:8px}
+.dia h3{margin:0 0 4px}
+.sesion{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+.sesion select{width:auto;margin:0;padding:6px}
+.sesion button{width:auto;margin:0;padding:4px 10px;background:#999}
+.sesion .txt{flex:1}
+
+.oculto{display:none!important}
+
+</style>
+</head>
+<body>
+
+<header id="hdr" class="oculto">
+  <img class="logo" src="logo-alex.png" alt="" onerror="this.remove()">
+  <div class="t">Alex Training Lab · Resistencia</div>
+  <button id="btn-salir" class="sec">Salir</button>
+</header>
+
+<main>
+  <div id="login" class="card login">
+    <img class="entrada" src="logo-alex.png" alt="Alex Training Lab" onerror="this.remove()">
+    <h2>Entrar</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button id="btn-login">Entrar</button>
+    <button id="btn-olvido" class="sec">He olvidado la contraseña</button>
+    <p id="error" class="msg err" style="display:none"></p>
+  </div>
+
+  <div id="nueva-pass" class="card login oculto">
+    <h2>Nueva contraseña</h2>
+    <input id="pass-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)">
+    <button id="btn-pass-nueva">Guardar contraseña</button>
+  </div>
+
+  <div id="panel" class="oculto">
+    <div class="card">
+      <div class="cab">Nuevo atleta</div>
+      <input id="nombre" placeholder="Nombre">
+      <input id="email-atleta" type="email" placeholder="Email (opcional)">
+      <button id="btn-crear">Añadir atleta</button>
+    </div>
+
+    <div class="card">
+      <div class="cab">Atletas</div>
+      <div id="lista"></div>
+    </div>
+
+    <div id="ficha" class="card oculto">
+      <div class="cab" id="ficha-nombre"></div>
+
+      <h3>Zonas</h3>
+      <div class="row">
+        <select id="zona-tipo"><option value="fc">FC</option><option value="ritmo">Ritmo</option></select>
+        <input id="zona-num" type="number" min="1" max="7" placeholder="Zona">
+      </div>
+      <div class="row">
+        <input id="zona-min" type="number" step="any" placeholder="Mínimo">
+        <input id="zona-max" type="number" step="any" placeholder="Máximo">
+      </div>
+      <button id="btn-zona">Guardar zona</button>
+      <div id="zonas"></div>
+
+      <h3>Calendario</h3>
+      <div class="nav">
+        <button id="semana-ant" class="sec">←</button>
+        <span id="semana-rango"></span>
+        <button id="semana-sig" class="sec">→</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <select id="cal-lib"></select>
+        <input id="cal-fecha" type="date">
+      </div>
+      <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
+      <button id="btn-asignar">Añadir al calendario</button>
+      <div id="semana"></div>
+    </div>
+
+    <div class="card">
+      <div class="cab">Biblioteca de sesiones</div>
+      <input id="s-nombre" placeholder="Nombre (ej. Series 6x800)">
+      <select id="s-tipo">
+        <option value="rodaje">Rodaje</option>
+        <option value="series">Series</option>
+        <option value="tirada">Tirada larga</option>
+        <option value="fuerza">Fuerza</option>
+        <option value="bici">Bici</option>
+        <option value="otro">Otro</option>
+      </select>
+      <div class="row">
+        <input id="s-duracion" type="number" min="0" placeholder="Duración (min)">
+        <input id="s-carga" type="number" min="0" placeholder="Carga">
+      </div>
+      <textarea id="s-descripcion" rows="3" placeholder="Descripción"></textarea>
+      <div class="acciones">
+        <button id="btn-sesion">Guardar sesión</button>
+        <button id="btn-cancelar-sesion" class="sec oculto">Cancelar edición</button>
+      </div>
+      <div id="biblioteca"></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://orrfqvrsrjfddhuzleel.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_PJeYDWMoLoRnZAT3o3jGWw_eBh5uwSR';
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let atletaActual = null;
+let sesionEditandoId = null;
+let bibliotecaCache = [];
+let semanaInicio = lunesDe(new Date());
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const $ = id => document.getElementById(id);
+
+function mostrarError(el, texto) { el.textContent = texto; el.style.display = texto ? 'block' : 'none'; }
+
+/* ---------- UTILIDADES DE FECHA ---------- */
+
+function lunesDe(fecha) {
+  const d = new Date(fecha);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+function sumarDias(fecha, n) {
+  const d = new Date(fecha);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+function iso(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+/* ---------- SESIÓN Y LOGIN ---------- */
+
+async function mostrarSegunSesion() {
+  if (window.location.hash.includes('type=recovery')) {
+    $('login').classList.add('oculto');
+    $('panel').classList.add('oculto');
+    $('hdr').classList.add('oculto');
+    $('nueva-pass').classList.remove('oculto');
+    return;
+  }
+  $('nueva-pass').classList.add('oculto');
+  const { data: { session } } = await sb.auth.getSession();
+  $('login').classList.toggle('oculto', !!session);
+  $('panel').classList.toggle('oculto', !session);
+  $('hdr').classList.toggle('oculto', !session);
+  if (session) {
+    cargarAtletas();
+    cargarBiblioteca();
+    $('cal-fecha').value = iso(new Date());
+  }
+}
+
+document.body.classList.add('con-fondo');
+const probarFondo = new Image();
+probarFondo.onerror = () => document.body.classList.remove('con-fondo');
+probarFondo.src = 'fondo-resistencia.jpg';
+
+$('btn-login').onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('email').value, password: $('password').value
+  });
+  mostrarError($('error'), error ? error.message : '');
+  if (!error) mostrarSegunSesion();
+};
+
+$('btn-olvido').onclick = async () => {
+  const email = $('email').value.trim();
+  if (!email) return mostrarError($('error'), 'Escribe tu email arriba y vuelve a pulsar el botón.');
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  mostrarError($('error'), error ? error.message : 'Te hemos enviado un email para cambiar la contraseña.');
+};
+
+$('btn-pass-nueva').onclick = async () => {
+  const nueva = $('pass-nueva').value;
+  if (nueva.length < 6) return alert('La contraseña debe tener al menos 6 caracteres');
+  const { error } = await sb.auth.updateUser({ password: nueva });
+  if (error) return alert(error.message);
+  alert('Contraseña cambiada. Ya puedes entrar.');
+  history.replaceState(null, '', window.location.pathname);
+  await sb.auth.signOut();
+  mostrarSegunSesion();
+};
+
+$('btn-salir').onclick = async () => { await sb.auth.signOut(); mostrarSegunSesion(); };
+
+/* ---------- ATLETAS ---------- */
+
+$('btn-crear').onclick = async () => {
+  const { data: { user } } = await sb.auth.getUser();
+  const { error } = await sb.from('atletas').insert({
+    entrenador_id: user.id,
+    nombre: $('nombre').value,
+    email: $('email-atleta').value || null
+  });
+  if (error) return alert(error.message);
+  $('nombre').value = ''; $('email-atleta').value = '';
+  cargarAtletas();
+};
+
+async function cargarAtletas() {
+  const { data, error } = await sb.from('atletas').select('id, nombre').order('nombre');
+  if (error) return alert(error.message);
+  $('lista').innerHTML = '';
+  data.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'atleta clickable';
+    div.textContent = a.nombre;
+    div.onclick = () => abrirFicha(a);
+    $('lista').appendChild(div);
+  });
+}
+
+function abrirFicha(atleta) {
+  atletaActual = atleta;
+  $('ficha').classList.remove('oculto');
+  $('ficha-nombre').textContent = atleta.nombre;
+  semanaInicio = lunesDe(new Date());
+  cargarZonas();
+  cargarSemana();
+}
+
+/* ---------- ZONAS ---------- */
+
+$('btn-zona').onclick = async () => {
+  const { error } = await sb.from('zonas').insert({
+    atleta_id: atletaActual.id,
+    tipo: $('zona-tipo').value,
+    zona: parseInt($('zona-num').value),
+    minimo: parseFloat($('zona-min').value),
+    maximo: parseFloat($('zona-max').value)
+  });
+  if (error) return alert(error.message);
+  cargarZonas();
+};
+
+async function cargarZonas() {
+  const { data, error } = await sb.from('zonas')
+    .select('*').eq('atleta_id', atletaActual.id).order('tipo').order('zona');
+  if (error) return alert(error.message);
+  $('zonas').innerHTML = '';
+  data.forEach(z => {
+    const p = document.createElement('div');
+    p.className = 'zona';
+    p.textContent = `${z.tipo.toUpperCase()} · Z${z.zona}: ${z.minimo} – ${z.maximo}`;
+    $('zonas').appendChild(p);
+  });
+}
+
+/* ---------- BIBLIOTECA DE SESIONES ---------- */
+
+async function cargarBiblioteca() {
+  const { data, error } = await sb.from('sesiones_biblioteca')
+    .select('*').order('nombre');
+  if (error) return alert(error.message);
+
+  bibliotecaCache = data;
+
+  const select = $('cal-lib');
+  select.innerHTML = '';
+  data.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.nombre;
+    select.appendChild(opt);
+  });
+
+  $('biblioteca').innerHTML = '';
+  data.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'atleta';
+
+    const titulo = document.createElement('strong');
+    titulo.textContent = s.nombre;
+
+    const detalle = document.createElement('div');
+    detalle.className = 'muted';
+    detalle.textContent =
+      `${s.tipo || 'sin tipo'} · ${s.duracion_min ?? '-'} min · carga ${s.carga ?? '-'}`;
+
+    const acciones = document.createElement('div');
+    acciones.className = 'acciones';
+
+    const editar = document.createElement('button');
+    editar.className = 'mini gold';
+    editar.textContent = 'Editar';
+    editar.onclick = () => editarSesion(s);
+
+    const borrar = document.createElement('button');
+    borrar.className = 'mini danger';
+    borrar.textContent = 'Borrar';
+    borrar.onclick = () => borrarSesion(s.id);
+
+    acciones.append(editar, borrar);
+    div.append(titulo, detalle, acciones);
+    $('biblioteca').appendChild(div);
+  });
+}
+
+function editarSesion(s) {
+  sesionEditandoId = s.id;
+  $('s-nombre').value = s.nombre;
+  $('s-tipo').value = s.tipo || 'otro';
+  $('s-duracion').value = s.duracion_min ?? '';
+  $('s-carga').value = s.carga ?? '';
+  $('s-descripcion').value = s.descripcion || '';
+  $('btn-sesion').textContent = 'Actualizar sesión';
+  $('btn-cancelar-sesion').classList.remove('oculto');
+  $('s-nombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function limpiarFormularioSesion() {
+  sesionEditandoId = null;
+  $('s-nombre').value = '';
+  $('s-tipo').value = 'rodaje';
+  $('s-duracion').value = '';
+  $('s-carga').value = '';
+  $('s-descripcion').value = '';
+  $('btn-sesion').textContent = 'Guardar sesión';
+  $('btn-cancelar-sesion').classList.add('oculto');
+}
+
+$('btn-cancelar-sesion').onclick = limpiarFormularioSesion;
+
+$('btn-sesion').onclick = async () => {
+  const nombre = $('s-nombre').value.trim();
+  if (!nombre) return alert('Pon un nombre a la sesión');
+
+  const datos = {
+    nombre,
+    tipo: $('s-tipo').value,
+    duracion_min: $('s-duracion').value ? parseInt($('s-duracion').value) : null,
+    carga: $('s-carga').value ? parseInt($('s-carga').value) : null,
+    descripcion: $('s-descripcion').value || null
+  };
+
+  let error;
+  if (sesionEditandoId) {
+    ({ error } = await sb.from('sesiones_biblioteca')
+      .update(datos).eq('id', sesionEditandoId));
+  } else {
+    const { data: { user } } = await sb.auth.getUser();
+    ({ error } = await sb.from('sesiones_biblioteca')
+      .insert({ ...datos, entrenador_id: user.id }));
+  }
+
+  if (error) return alert(error.message);
+  limpiarFormularioSesion();
+  cargarBiblioteca();
+};
+
+async function borrarSesion(id) {
+  if (!confirm('¿Borrar esta sesión de la biblioteca?')) return;
+  const { error } = await sb.from('sesiones_biblioteca').delete().eq('id', id);
+  if (error) return alert(error.message);
+  cargarBiblioteca();
+}
+
+/* ---------- CALENDARIO SEMANAL ---------- */
+
+$('semana-ant').onclick = () => {
+  semanaInicio = sumarDias(semanaInicio, -7);
+  cargarSemana();
+};
+
+$('semana-sig').onclick = () => {
+  semanaInicio = sumarDias(semanaInicio, 7);
+  cargarSemana();
+};
+
+$('btn-asignar').onclick = async () => {
+  const libId = $('cal-lib').value;
+  const fecha = $('cal-fecha').value;
+  if (!libId || !fecha) return alert('Elige una sesión y una fecha');
+
+  const base = bibliotecaCache.find(s => s.id === libId);
+  const { error } = await sb.from('sesiones_planificadas').insert({
+    atleta_id: atletaActual.id,
+    fecha,
+    tipo: base.tipo,
+    descripcion: $('cal-desc').value || base.nombre + (base.descripcion ? ' — ' + base.descripcion : ''),
+    duracion_min: base.duracion_min
+  });
+  if (error) return alert(error.message);
+
+  $('cal-desc').value = '';
+  semanaInicio = lunesDe(new Date(fecha + 'T00:00:00'));
+  cargarSemana();
+};
+
+async function cargarSemana() {
+  const inicio = iso(semanaInicio);
+  const fin = iso(sumarDias(semanaInicio, 6));
+  $('semana-rango').textContent = `${inicio} → ${fin}`;
+
+  const { data, error } = await sb.from('sesiones_planificadas')
+    .select('*')
+    .eq('atleta_id', atletaActual.id)
+    .gte('fecha', inicio)
+    .lte('fecha', fin)
+    .order('fecha');
+  if (error) return alert(error.message);
+
+  $('semana').innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const dia = sumarDias(semanaInicio, i);
+    const bloque = document.createElement('div');
+    bloque.className = 'dia';
+
+    const titulo = document.createElement('h3');
+    titulo.textContent = `${DIAS[i]} ${dia.getDate()}/${dia.getMonth() + 1}`;
+    bloque.appendChild(titulo);
+
+    const delDia = data.filter(p => p.fecha === iso(dia));
+    if (delDia.length === 0) {
+      const vacio = document.createElement('div');
+      vacio.className = 'muted';
+      vacio.textContent = 'Sin sesiones';
+      bloque.appendChild(vacio);
+    }
+
+    delDia.forEach(p => bloque.appendChild(filaSesion(p)));
+    $('semana').appendChild(bloque);
+  }
+}
+
+function filaSesion(p) {
+  const fila = document.createElement('div');
+  fila.className = 'sesion';
+
+  const texto = document.createElement('div');
+  texto.className = 'txt';
+  texto.textContent = `${p.descripcion || p.tipo || 'Sesión'} · ${p.duracion_min ?? '-'} min`;
+
+  const estado = document.createElement('select');
+  ['pendiente', 'hecha', 'omitida'].forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e;
+    opt.textContent = e;
+    if (e === p.estado) opt.selected = true;
+    estado.appendChild(opt);
+  });
+  estado.onchange = async () => {
+    const { error } = await sb.from('sesiones_planificadas')
+      .update({ estado: estado.value }).eq('id', p.id);
+    if (error) alert(error.message);
+  };
+
+  const borrar = document.createElement('button');
+  borrar.textContent = 'Quitar';
+  borrar.onclick = async () => {
+    if (!confirm('¿Quitar esta sesión del calendario?')) return;
+    const { error } = await sb.from('sesiones_planificadas').delete().eq('id', p.id);
+    if (error) return alert(error.message);
+    cargarSemana();
+  };
+
+  fila.append(texto, estado, borrar);
+  return fila;
+}
+
+mostrarSegunSesion();
+</script>
+</body>
+</html>
