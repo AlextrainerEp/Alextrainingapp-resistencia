@@ -163,6 +163,9 @@ h3{margin:12px 0 6px;font-size:15px}
         <button id="btn-acceso" class="sec">Guardar y liberar</button>
       </div>
 
+      <h3>Perfil del atleta</h3>
+      <div id="perfil-resumen" class="muted"></div>
+
       <h3>Zonas</h3>
       <div class="row">
         <select id="zona-tipo"><option value="fc">FC</option><option value="ritmo">Ritmo</option></select>
@@ -195,6 +198,9 @@ h3{margin:12px 0 6px;font-size:15px}
         <input id="aplicar-fecha" type="date">
       </div>
       <button id="btn-aplicar">Aplicar plan al atleta</button>
+
+      <h3>Métricas</h3>
+      <div id="metricas-t" class="muted" style="white-space:pre-line"></div>
 
       <h3>Acceso y mensajes</h3>
       <label class="ver"><input type="checkbox" id="ver-biblio-atleta"> Puede ver la biblioteca de sesiones</label>
@@ -298,6 +304,56 @@ h3{margin:12px 0 6px;font-size:15px}
     </div>
 
     <div class="card">
+      <div class="cab">Mis datos y métricas</div>
+      <p class="muted">Tu entrenador usa estos datos para ajustar tu entrenamiento. Déjalo vacío lo que no sepas.</p>
+      <div class="row">
+        <label>Peso (kg)<input id="m-peso" type="number" step="0.1"></label>
+        <label>Altura (cm)<input id="m-altura" type="number"></label>
+      </div>
+      <div class="row">
+        <label>Años corriendo<input id="m-anos" type="number" step="0.5"></label>
+        <label>Km por semana (media)<input id="m-km" type="number"></label>
+      </div>
+      <div class="row">
+        <label>Pulso en reposo (ppm)<input id="m-pulso" type="number"></label>
+        <label>HRV (ms)<input id="m-hrv" type="number" step="0.1"></label>
+      </div>
+      <div class="row">
+        <label>FC máxima (ppm)<input id="m-fcmax" type="number"></label>
+        <label>Horas de sueño (media)<input id="m-sueno" type="number" step="0.5"></label>
+      </div>
+      <div class="row">
+        <label>Días disponibles a la semana<input id="m-dias" type="number" min="1" max="7"></label>
+        <label>Cómo te ves como corredor
+          <select id="m-nivel">
+            <option value="">—</option>
+            <option value="principiante">Principiante</option>
+            <option value="intermedio">Intermedio</option>
+            <option value="avanzado">Avanzado</option>
+          </select>
+        </label>
+      </div>
+      <label>Objetivo<input id="m-objetivo" type="text" placeholder="Ej.: 10 km en 50 min"></label>
+      <label>Lesiones o molestias actuales<textarea id="m-lesiones" rows="2"></textarea></label>
+      <label>Comentarios<textarea id="m-comentarios" rows="2"></textarea></label>
+      <div class="row">
+        <button id="m-guardar" class="gold">Guardar métricas</button>
+      </div>
+      <div class="muted" id="m-estado"></div>
+    </div>
+
+    <div class="card">
+      <div class="cab">Mi perfil</div>
+      <p class="muted">Estos datos sirven para ajustar tu entrenamiento a tu nivel. Deja en blanco lo que no sepas.</p>
+      <div id="perfil-form"></div>
+      <label class="ver"><input type="checkbox" id="pf-consentimiento"> Acepto que mis datos de salud (pulso, HRV, lesiones) se usen para planificar mi entrenamiento</label>
+      <div class="row">
+        <button id="btn-perfil-guardar" class="gold">Guardar perfil</button>
+        <span id="perfil-estado" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="cab">Mensajes con tu entrenador</div>
       <div id="chat-a-msgs" class="chat"></div>
       <div class="row">
@@ -390,6 +446,138 @@ async function buscarFichaAtleta(uid, email) {
 
 let esAdmin = false;
 
+const GRUPOS_PERFIL = [
+  { titulo: 'Datos básicos', campos: [
+    { k: 'fecha_nacimiento', l: 'Fecha de nacimiento', t: 'date' },
+    { k: 'sexo', l: 'Sexo', t: 'sel', o: ['', 'Mujer', 'Hombre', 'Otro'] },
+    { k: 'altura_cm', l: 'Altura (cm)', t: 'num' },
+    { k: 'peso_kg', l: 'Peso (kg)', t: 'num' } ] },
+  { titulo: 'Experiencia y volumen', campos: [
+    { k: 'anos_corriendo', l: 'Años corriendo', t: 'num' },
+    { k: 'km_semana_actual', l: 'Km por semana actuales', t: 'num' },
+    { k: 'km_semana_max', l: 'Máximo de km por semana que has aguantado', t: 'num' },
+    { k: 'tirada_max_km', l: 'Tirada más larga (km)', t: 'num' },
+    { k: 'dias_disponibles', l: 'Días a la semana que puedes entrenar', t: 'num' },
+    { k: 'mejor_5k', l: 'Mejor marca 5 km (mm:ss)', t: 'text' },
+    { k: 'mejor_10k', l: 'Mejor marca 10 km (mm:ss)', t: 'text' },
+    { k: 'mejor_media', l: 'Mejor marca media maratón (h:mm:ss)', t: 'text' },
+    { k: 'mejor_maraton', l: 'Mejor marca maratón (h:mm:ss)', t: 'text' } ] },
+  { titulo: 'Fisiología', campos: [
+    { k: 'fc_reposo', l: 'Pulsaciones en reposo (ppm)', t: 'num' },
+    { k: 'fc_max', l: 'Pulsaciones máximas (ppm)', t: 'num' },
+    { k: 'fc_umbral', l: 'Pulsaciones en umbral (ppm)', t: 'num' },
+    { k: 'hrv_media', l: 'HRV media (ms)', t: 'num' },
+    { k: 'vo2max', l: 'VO2max estimado', t: 'num' },
+    { k: 'ritmo_facil', l: 'Ritmo cómodo (min/km)', t: 'text' },
+    { k: 'ritmo_umbral', l: 'Ritmo umbral (min/km)', t: 'text' } ] },
+  { titulo: 'Recuperación y vida', campos: [
+    { k: 'horas_sueno', l: 'Horas de sueño por noche', t: 'num' },
+    { k: 'estres', l: 'Estrés habitual (1-10)', t: 'num' },
+    { k: 'otros_deportes', l: 'Otros deportes o fuerza', t: 'text' },
+    { k: 'reloj', l: 'Reloj o app que usas', t: 'text' } ] },
+  { titulo: 'Lesiones y objetivo', campos: [
+    { k: 'lesiones', l: 'Lesiones actuales o pasadas', t: 'area' },
+    { k: 'objetivo', l: 'Objetivo principal', t: 'text' },
+    { k: 'fecha_objetivo', l: 'Fecha de la prueba objetivo', t: 'date' },
+    { k: 'notas', l: 'Notas', t: 'area' } ] },
+];
+
+function construirFormPerfil(datos) {
+  const box = $('perfil-form');
+  box.innerHTML = '';
+  GRUPOS_PERFIL.forEach(g => {
+    const h = document.createElement('h3');
+    h.textContent = g.titulo;
+    box.appendChild(h);
+    g.campos.forEach(c => {
+      const lab = document.createElement('label');
+      lab.style.display = 'block';
+      lab.style.margin = '6px 0';
+      lab.append(c.l);
+      let input;
+      if (c.t === 'sel') {
+        input = document.createElement('select');
+        c.o.forEach(v => {
+          const op = document.createElement('option');
+          op.value = v;
+          op.textContent = v || '—';
+          input.appendChild(op);
+        });
+      } else if (c.t === 'area') {
+        input = document.createElement('textarea');
+        input.rows = 2;
+      } else {
+        input = document.createElement('input');
+        input.type = c.t === 'date' ? 'date' : 'text';
+        if (c.t === 'num') input.inputMode = 'decimal';
+      }
+      input.id = 'pf-' + c.k;
+      input.value = (datos && datos[c.k] != null) ? datos[c.k] : '';
+      lab.appendChild(input);
+      box.appendChild(lab);
+    });
+  });
+}
+
+async function cargarPerfilAtleta(atletaId) {
+  const { data, error } = await sb.from('perfil_atleta').select('*')
+    .eq('atleta_id', atletaId).maybeSingle();
+  if (error) return alert(error.message);
+  construirFormPerfil(data || {});
+  $('pf-consentimiento').checked = !!(data && data.consentimiento);
+}
+
+$('btn-perfil-guardar').onclick = async () => {
+  const fila = { atleta_id: miAtleta.id, updated_at: new Date().toISOString() };
+  for (const g of GRUPOS_PERFIL) {
+    for (const c of g.campos) {
+      const raw = $('pf-' + c.k).value.trim();
+      if (raw === '') { fila[c.k] = null; continue; }
+      if (c.t === 'num') {
+        const n = Number(raw.replace(',', '.'));
+        if (Number.isNaN(n)) return alert(`Revisa el campo "${c.l}": debe ser un número.`);
+        fila[c.k] = n;
+      } else {
+        fila[c.k] = raw;
+      }
+    }
+  }
+  fila.consentimiento = $('pf-consentimiento').checked;
+  const { error } = await sb.from('perfil_atleta').upsert(fila, { onConflict: 'atleta_id' });
+  if (error) return alert(error.message);
+  $('perfil-estado').textContent = 'Guardado';
+  setTimeout(() => { $('perfil-estado').textContent = ''; }, 2500);
+};
+
+async function cargarPerfilResumen(atletaId) {
+  const { data, error } = await sb.from('perfil_atleta').select('*')
+    .eq('atleta_id', atletaId).maybeSingle();
+  const box = $('perfil-resumen');
+  box.innerHTML = '';
+  if (error) { box.textContent = error.message; return; }
+  if (!data) { box.textContent = 'El atleta aún no ha rellenado su perfil.'; return; }
+  GRUPOS_PERFIL.forEach(g => {
+    const h = document.createElement('div');
+    h.style.fontWeight = '700';
+    h.style.marginTop = '8px';
+    h.textContent = g.titulo;
+    box.appendChild(h);
+    g.campos.forEach(c => {
+      const v = data[c.k];
+      if (v === null || v === undefined || v === '') return;
+      const p = document.createElement('div');
+      p.style.fontSize = '14px';
+      p.textContent = `${c.l}: ${v}`;
+      box.appendChild(p);
+    });
+  });
+  const cons = document.createElement('div');
+  cons.className = 'muted';
+  cons.style.marginTop = '8px';
+  cons.textContent = data.consentimiento ? 'Consentimiento de datos de salud: sí' : 'Consentimiento de datos de salud: no';
+  box.appendChild(cons);
+}
+
 async function comprobarAdmin(uid) {
   const { data } = await sb.from('admins').select('user_id').eq('user_id', uid).limit(1);
   esAdmin = !!(data && data.length);
@@ -406,6 +594,58 @@ function modoEntrenador() {
   $('cal-fecha').value = iso(new Date());
 }
 
+const CAMPOS_METRICAS = {
+  'm-peso': 'peso_kg', 'm-altura': 'altura_cm', 'm-anos': 'anos_corriendo',
+  'm-km': 'km_semana', 'm-pulso': 'pulso_reposo', 'm-hrv': 'hrv_ms',
+  'm-fcmax': 'fc_max', 'm-sueno': 'horas_sueno', 'm-dias': 'dias_disponibles',
+  'm-nivel': 'nivel_percibido', 'm-objetivo': 'objetivo',
+  'm-lesiones': 'lesiones', 'm-comentarios': 'comentarios'
+};
+const ETIQUETAS_METRICAS = {
+  peso_kg: 'Peso', altura_cm: 'Altura', anos_corriendo: 'Años corriendo', km_semana: 'Km/semana',
+  pulso_reposo: 'Pulso reposo', hrv_ms: 'HRV', fc_max: 'FC máx', horas_sueno: 'Sueño',
+  dias_disponibles: 'Días/semana', nivel_percibido: 'Nivel percibido', objetivo: 'Objetivo',
+  lesiones: 'Lesiones', comentarios: 'Comentarios'
+};
+
+async function cargarMetricasAtleta(atletaId) {
+  const { data } = await sb.from('metricas').select('*')
+    .eq('atleta_id', atletaId).order('fecha', { ascending: false }).limit(1);
+  if (!data || !data.length) return;
+  const m = data[0];
+  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
+    $(id).value = m[campo] ?? '';
+  });
+  $('m-estado').textContent = `Última actualización: ${m.fecha}`;
+}
+
+$('m-guardar').onclick = async () => {
+  const fila = { atleta_id: miAtleta.id };
+  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
+    const v = $(id).value.trim();
+    const numerico = ['peso_kg','altura_cm','anos_corriendo','km_semana','pulso_reposo','hrv_ms',
+      'fc_max','horas_sueno','dias_disponibles'].includes(campo);
+    fila[campo] = v === '' ? null : (numerico ? Number(v) : v);
+  });
+  const { error } = await sb.from('metricas').insert(fila);
+  if (error) return alert(error.message);
+  $('m-estado').textContent = `Guardado el ${new Date().toLocaleDateString('es-ES')}`;
+};
+
+async function cargarMetricasTrainer(atletaId) {
+  const box = $('metricas-t');
+  box.textContent = 'Cargando…';
+  const { data, error } = await sb.from('metricas').select('*')
+    .eq('atleta_id', atletaId).order('fecha', { ascending: false }).limit(1);
+  if (error) return box.textContent = error.message;
+  if (!data || !data.length) return box.textContent = 'Este atleta aún no ha rellenado sus métricas.';
+  const m = data[0];
+  const lineas = Object.entries(ETIQUETAS_METRICAS)
+    .filter(([campo]) => m[campo] !== null && m[campo] !== '')
+    .map(([campo, etiqueta]) => `${etiqueta}: ${m[campo]}`);
+  box.textContent = `Actualizado: ${m.fecha}\n` + (lineas.join('\n') || 'Sin datos');
+}
+
 async function modoAtleta(a) {
   modoAtletaActivo = true;
   miAtleta = a;
@@ -417,6 +657,8 @@ async function modoAtleta(a) {
   semanaInicio = lunesDe(new Date());
   cargarSemana();
   activarChat('chat-a', a.id, miUserId);
+  cargarPerfilAtleta(a.id);
+  cargarMetricasAtleta(a.id);
 }
 
 async function cargarBibliotecaAtleta() {
@@ -607,6 +849,8 @@ function abrirFicha(atleta) {
     ? 'Vinculada a una cuenta registrada'
     : 'Sin cuenta: se vinculará al registrarse con este email';
   activarChat('chat-t', atleta.id, miUserId);
+  cargarPerfilResumen(atleta.id);
+  cargarMetricasTrainer(atleta.id);
   cargarZonas();
   cargarTests();
   cargarSemana();
