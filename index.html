@@ -156,6 +156,13 @@ h3{margin:12px 0 6px;font-size:15px}
     <div id="ficha" class="card oculto">
       <div class="cab" id="ficha-nombre"></div>
 
+      <h3>Cuenta de acceso</h3>
+      <div class="muted" id="acceso-estado"></div>
+      <div class="row">
+        <input id="acceso-email" type="email" placeholder="Email de acceso">
+        <button id="btn-acceso" class="sec">Guardar y liberar</button>
+      </div>
+
       <h3>Zonas</h3>
       <div class="row">
         <select id="zona-tipo"><option value="fc">FC</option><option value="ritmo">Ritmo</option></select>
@@ -449,6 +456,18 @@ function mostrarDetalle(p) {
   $('detalle-atleta').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+$('btn-acceso').onclick = async () => {
+  const email = $('acceso-email').value.trim();
+  if (!email) return alert('Escribe el email de acceso.');
+  const { error } = await sb.from('atletas')
+    .update({ email, user_id: null }).eq('id', atletaActual.id);
+  if (error) return alert(error.message);
+  atletaActual.email = email;
+  atletaActual.user_id = null;
+  $('acceso-estado').textContent = 'Sin cuenta: se vinculará al registrarse con este email';
+  alert('Listo. Cuando esa persona se registre con este email, su cuenta quedará vinculada a esta ficha.');
+};
+
 $('det-cerrar').onclick = () => $('detalle-atleta').classList.add('oculto');
 $('semana-ant-a').onclick = () => { semanaInicio = sumarDias(semanaInicio, -7); cargarSemana(); };
 $('semana-sig-a').onclick = () => { semanaInicio = sumarDias(semanaInicio, 7); cargarSemana(); };
@@ -564,7 +583,7 @@ $('btn-crear').onclick = async () => {
 };
 
 async function cargarAtletas() {
-  const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca').order('nombre');
+  const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca, email, user_id').order('nombre');
   if (error) return alert(error.message);
   $('lista').innerHTML = '';
   data.forEach(a => {
@@ -583,6 +602,10 @@ function abrirFicha(atleta) {
   semanaInicio = lunesDe(new Date());
   if (atleta.nivel) $('aplicar-nivel').value = atleta.nivel;
   $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
+  $('acceso-email').value = atleta.email || '';
+  $('acceso-estado').textContent = atleta.user_id
+    ? 'Vinculada a una cuenta registrada'
+    : 'Sin cuenta: se vinculará al registrarse con este email';
   activarChat('chat-t', atleta.id, miUserId);
   cargarZonas();
   cargarTests();
