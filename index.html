@@ -140,6 +140,7 @@ h3{margin:12px 0 6px;font-size:15px}
   </div>
 
   <div id="panel" class="oculto">
+    <div id="badge-admin" class="oculto muted" style="margin:4px 0 10px">Modo administrador: gestionas los atletas de la cuenta principal</div>
     <div class="card">
       <div class="cab">Nuevo atleta</div>
       <input id="nombre" placeholder="Nombre">
@@ -380,8 +381,17 @@ async function buscarFichaAtleta(uid, email) {
   return null;
 }
 
+let esAdmin = false;
+
+async function comprobarAdmin(uid) {
+  const { data } = await sb.from('admins').select('user_id').eq('user_id', uid).limit(1);
+  esAdmin = !!(data && data.length);
+  $('badge-admin').classList.toggle('oculto', !esAdmin);
+}
+
 function modoEntrenador() {
   modoAtletaActivo = false;
+  comprobarAdmin(miUserId);
   $('panel').classList.remove('oculto');
   $('vista-atleta').classList.add('oculto');
   cargarAtletas();
