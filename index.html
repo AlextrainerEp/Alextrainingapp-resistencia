@@ -276,6 +276,11 @@ h3{margin:12px 0 6px;font-size:15px}
       <div id="plan-vista"></div>
     </div>
   </div>
+  <div id="pendiente" class="card oculto">
+    <div class="cab">Cuenta pendiente</div>
+    <p>Tu cuenta todavía no está vinculada a un entrenador. Pide a tu entrenador que te dé de alta con este mismo email.</p>
+  </div>
+
   <div id="vista-atleta" class="oculto">
     <div class="card">
       <div class="cab">Mi calendario</div>
@@ -427,13 +432,18 @@ async function mostrarSegunSesion() {
   $('login').classList.toggle('oculto', !!session);
   $('hdr').classList.toggle('oculto', !session);
   if (!session) {
+    $('pendiente').classList.add('oculto');
     $('panel').classList.add('oculto');
     $('vista-atleta').classList.add('oculto');
     return;
   }
   miUserId = session.user.id;
+  const email = (session.user.email || '').toLowerCase();
+  const esEntrenador = email === EMAIL_ENTRENADOR || await esAdminCuenta(miUserId);
+  if (esEntrenador) return modoEntrenador();
   const atleta = await buscarFichaAtleta(miUserId, session.user.email);
-  if (atleta) modoAtleta(atleta); else modoEntrenador();
+  if (atleta) return modoAtleta(atleta);
+  modoPendiente();
 }
 
 async function buscarFichaAtleta(uid, email) {
@@ -452,6 +462,19 @@ async function buscarFichaAtleta(uid, email) {
 }
 
 let esAdmin = false;
+const EMAIL_ENTRENADOR = 'noko65@hotmail.com';
+
+async function esAdminCuenta(uid) {
+  const { data } = await sb.from('admins').select('user_id').eq('user_id', uid).limit(1);
+  return !!(data && data.length);
+}
+
+function modoPendiente() {
+  modoAtletaActivo = false;
+  $('panel').classList.add('oculto');
+  $('vista-atleta').classList.add('oculto');
+  $('pendiente').classList.remove('oculto');
+}
 
 const GRUPOS_PERFIL = [
   { titulo: 'Datos básicos', campos: [
@@ -593,6 +616,7 @@ async function comprobarAdmin(uid) {
 
 function modoEntrenador() {
   modoAtletaActivo = false;
+  $('pendiente').classList.add('oculto');
   comprobarAdmin(miUserId);
   $('panel').classList.remove('oculto');
   $('vista-atleta').classList.add('oculto');
@@ -655,6 +679,7 @@ async function cargarMetricasTrainer(atletaId) {
 
 async function modoAtleta(a) {
   modoAtletaActivo = true;
+  $('pendiente').classList.add('oculto');
   miAtleta = a;
   atletaActual = a;
   $('panel').classList.add('oculto');
