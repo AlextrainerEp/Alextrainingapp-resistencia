@@ -150,6 +150,21 @@ h3{margin:12px 0 6px;font-size:15px}
 .dia-item button{width:auto}
 #dia-nueva-form{display:grid;gap:6px;margin-top:8px}
 #dia-nueva-form.oculto{display:none}
+
+.tabs-a{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:#2e3133;padding:8px;border-radius:10px;margin:10px 0}
+.taba{flex:0 0 auto;background:#4a4f52;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;width:auto}
+.taba.on{background:#D9DDE0;color:#1d1f21;font-weight:700}
+.seca{display:none}
+.seca.on{display:block}
+#resumen-atleta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:#f4f5f6;border-radius:8px;padding:8px;text-align:center}
+.stat b{display:block;font-size:17px}
+.stat small{color:#555}
+.hist-item{padding:8px 0;border-bottom:1px solid #eee;cursor:pointer}
+.barra-row{display:grid;grid-template-columns:52px 1fr 120px;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.barra-fondo{height:14px;background:#e3e6e8;border-radius:4px;overflow:hidden}
+.barra{height:100%;background:#1976d2;border-radius:4px}
+#m-fecha,#m-fc,#m-hrv,#m-peso,#m-sueno,#m-estres{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -370,95 +385,123 @@ h3{margin:12px 0 6px;font-size:15px}
   </div>
 
   <div id="vista-atleta" class="oculto">
-    <div class="card">
-      <div class="cab">Mi calendario</div>
-      <div class="nav">
-        <button id="semana-ant-a" class="sec">←</button>
-        <span id="semana-rango-a"></span>
-        <button id="semana-sig-a" class="sec">→</button>
-        <button id="btn-vista-a" class="sec">Ver mes</button>
-      </div>
-      <div class="leyenda" data-leyenda></div>
-      <div id="semana-a"></div>
-    </div>
+    <div id="resumen-atleta" class="card"></div>
 
-    <div id="detalle-atleta" class="card oculto">
-      <div class="cab" id="det-titulo"></div>
-      <div class="muted" id="det-meta"></div>
-      <p id="det-texto" style="white-space:pre-line;font-size:15px;line-height:1.5"></p>
-      <div class="row">
-        <select id="det-estado">
-          <option value="pendiente">pendiente</option>
-          <option value="hecha">hecha</option>
-          <option value="omitida">omitida</option>
-        </select>
-        <button id="det-cerrar" class="sec">Cerrar</button>
-      </div>
-    </div>
+    <nav class="tabs-a">
+      <button class="taba on" data-ta="cal">Calendario</button>
+      <button class="taba" data-ta="hist">Historial</button>
+      <button class="taba" data-ta="carga">Carga</button>
+      <button class="taba" data-ta="prog">Progreso</button>
+      <button class="taba" data-ta="perfil">Perfil</button>
+      <button class="taba" data-ta="msg">Mensajes</button>
+    </nav>
 
-    <div id="biblio-atleta" class="card oculto">
-      <div class="cab">Biblioteca de sesiones</div>
-      <div id="biblio-atleta-lista"></div>
-    </div>
+    <section class="seca on" data-sa="cal">
+      <div class="card">
+        <div class="cab">Mi calendario</div>
+        <div class="nav">
+          <button id="semana-ant-a" class="sec">←</button>
+          <span id="semana-rango-a"></span>
+          <button id="semana-sig-a" class="sec">→</button>
+          <button id="btn-vista-a" class="sec">Ver mes</button>
+        </div>
+        <div class="leyenda" data-leyenda></div>
+        <div id="semana-a"></div>
+      </div>
 
-    <div class="card">
-      <div class="cab">Mis datos y métricas</div>
-      <p class="muted">Tu entrenador usa estos datos para ajustar tu entrenamiento. Déjalo vacío lo que no sepas.</p>
-      <div class="row">
-        <label>Peso (kg)<input id="m-peso" type="number" step="0.1"></label>
-        <label>Altura (cm)<input id="m-altura" type="number"></label>
-      </div>
-      <div class="row">
-        <label>Años corriendo<input id="m-anos" type="number" step="0.5"></label>
-        <label>Km por semana (media)<input id="m-km" type="number"></label>
-      </div>
-      <div class="row">
-        <label>Pulso en reposo (ppm)<input id="m-pulso" type="number"></label>
-        <label>HRV (ms)<input id="m-hrv" type="number" step="0.1"></label>
-      </div>
-      <div class="row">
-        <label>FC máxima (ppm)<input id="m-fcmax" type="number"></label>
-        <label>Horas de sueño (media)<input id="m-sueno" type="number" step="0.5"></label>
-      </div>
-      <div class="row">
-        <label>Días disponibles a la semana<input id="m-dias" type="number" min="1" max="7"></label>
-        <label>Cómo te ves como corredor
-          <select id="m-nivel">
-            <option value="">—</option>
-            <option value="principiante">Principiante</option>
-            <option value="intermedio">Intermedio</option>
-            <option value="avanzado">Avanzado</option>
+      <div id="detalle-atleta" class="card oculto">
+        <div class="cab" id="det-titulo"></div>
+        <div class="muted" id="det-meta"></div>
+        <p id="det-texto" style="white-space:pre-line;font-size:15px;line-height:1.5"></p>
+        <label>Estado
+          <select id="det-estado">
+            <option value="pendiente">pendiente</option>
+            <option value="hecha">hecha</option>
+            <option value="omitida">omitida</option>
           </select>
         </label>
+        <label>Esfuerzo percibido (1 muy suave · 10 máximo)
+          <select id="det-rpe">
+            <option value="">—</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          </select>
+        </label>
+        <label>Km reales
+          <input id="det-km" type="text" inputmode="decimal" placeholder="ej. 8.5">
+        </label>
+        <label>Tus notas
+          <textarea id="det-notas" rows="2" placeholder="Cómo te has sentido"></textarea>
+        </label>
+        <div class="row">
+          <button id="det-guardar" class="gold">Guardar</button>
+          <button id="det-cerrar" class="sec">Cerrar</button>
+        </div>
       </div>
-      <label>Objetivo<input id="m-objetivo" type="text" placeholder="Ej.: 10 km en 50 min"></label>
-      <label>Lesiones o molestias actuales<textarea id="m-lesiones" rows="2"></textarea></label>
-      <label>Comentarios<textarea id="m-comentarios" rows="2"></textarea></label>
-      <div class="row">
-        <button id="m-guardar" class="gold">Guardar métricas</button>
-      </div>
-      <div class="muted" id="m-estado"></div>
-    </div>
 
-    <div class="card">
-      <div class="cab">Mi perfil</div>
-      <p class="muted">Estos datos sirven para ajustar tu entrenamiento a tu nivel. Deja en blanco lo que no sepas.</p>
-      <div id="perfil-form"></div>
-      <label class="ver"><input type="checkbox" id="pf-consentimiento"> Acepto que mis datos de salud (pulso, HRV, lesiones) se usen para planificar mi entrenamiento</label>
-      <div class="row">
-        <button id="btn-perfil-guardar" class="gold">Guardar perfil</button>
-        <span id="perfil-estado" class="muted"></span>
+      <div id="biblio-atleta" class="card oculto">
+        <div class="cab">Biblioteca de sesiones</div>
+        <div id="biblio-atleta-lista"></div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <div class="cab">Mensajes con tu entrenador</div>
-      <div id="chat-a-msgs" class="chat"></div>
-      <div class="row">
-        <textarea id="chat-a-txt" rows="2" placeholder="Escribe un mensaje"></textarea>
-        <button id="chat-a-enviar" class="mini">Enviar</button>
+    <section class="seca" data-sa="hist">
+      <div class="card">
+        <div class="cab">Historial (últimas 12 semanas)</div>
+        <div id="historial-a"></div>
       </div>
-    </div>
+    </section>
+
+    <section class="seca" data-sa="carga">
+      <div class="card">
+        <div class="cab">Carga de entrenamiento</div>
+        <p class="muted">La carga de cada sesión es la duración × el esfuerzo que marcas. Rellena el esfuerzo y los km al terminar cada sesión.</p>
+        <div id="carga-a"></div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="prog">
+      <div class="card">
+        <div class="cab">Mis tests</div>
+        <div id="tests-a"></div>
+      </div>
+      <div class="card">
+        <div class="cab">Registrar hoy</div>
+        <p class="muted">Pulsaciones en reposo, HRV, peso, sueño y estrés. Un registro por día.</p>
+        <input id="m-fecha" type="date">
+        <input id="m-fc" type="text" inputmode="decimal" placeholder="Pulsaciones en reposo (ppm)">
+        <input id="m-hrv" type="text" inputmode="decimal" placeholder="HRV (ms)">
+        <input id="m-peso" type="text" inputmode="decimal" placeholder="Peso (kg)">
+        <input id="m-sueno" type="text" inputmode="decimal" placeholder="Horas de sueño">
+        <input id="m-estres" type="text" inputmode="decimal" placeholder="Estrés (1-10)">
+        <button id="m-guardar" class="gold">Guardar registro</button>
+        <div id="metricas-a" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="perfil">
+      <div class="card">
+        <div class="cab">Mi perfil</div>
+        <p class="muted">Estos datos sirven para ajustar tu entrenamiento a tu nivel. Deja en blanco lo que no sepas.</p>
+        <div id="perfil-form"></div>
+        <label class="ver"><input type="checkbox" id="pf-consentimiento"> Acepto que mis datos de salud (pulso, HRV, lesiones) se usen para planificar mi entrenamiento</label>
+        <div class="row">
+          <button id="btn-perfil-guardar" class="gold">Guardar perfil</button>
+          <span id="perfil-estado" class="muted"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="msg">
+      <div class="card">
+        <div class="cab">Mensajes con tu entrenador</div>
+        <div id="chat-a-msgs" class="chat"></div>
+        <div class="row">
+          <textarea id="chat-a-txt" rows="2" placeholder="Escribe un mensaje"></textarea>
+          <button id="chat-a-enviar" class="mini">Enviar</button>
+        </div>
+      </div>
+    </section>
   </div>
 </main>
 
@@ -786,6 +829,9 @@ async function modoAtleta(a) {
   cargarSemana();
   activarChat('chat-a', a.id, miUserId);
   cargarPerfilAtleta(a.id);
+  mostrarTabA('cal');
+  $('m-fecha').value = iso(new Date());
+  cargarTodoAtleta();
   cargarMetricasAtleta(a.id);
 }
 
@@ -810,17 +856,269 @@ async function cargarBibliotecaAtleta() {
   });
 }
 
+let datosAtleta = { sesiones: [], tests: [], metricas: [], perfil: null };
+
+function mostrarTabA(id) {
+  document.querySelectorAll('.seca').forEach(x => x.classList.toggle('on', x.dataset.sa === id));
+  document.querySelectorAll('.taba').forEach(x => x.classList.toggle('on', x.dataset.ta === id));
+}
+document.querySelectorAll('.taba').forEach(b => b.onclick = () => mostrarTabA(b.dataset.ta));
+
+function cargaSesion(p) {
+  return p.rpe ? (Number(p.duracion_min) || 0) * p.rpe : 0;
+}
+function fechaCorta(d) {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function cargarTodoAtleta() {
+  if (!miAtleta) return;
+  const hoy = new Date();
+  const desde = iso(sumarDias(lunesDe(hoy), -84));
+  const [ses, tst, met, per] = await Promise.all([
+    sb.from('sesiones_planificadas').select('*').eq('atleta_id', miAtleta.id)
+      .gte('fecha', desde).order('fecha', { ascending: false }),
+    sb.from('tests').select('*').eq('atleta_id', miAtleta.id).order('fecha', { ascending: true }),
+    sb.from('metricas').select('*').eq('atleta_id', miAtleta.id).order('fecha', { ascending: false }).limit(60),
+    sb.from('perfil_atleta').select('fecha_objetivo, objetivo').eq('atleta_id', miAtleta.id).maybeSingle()
+  ]);
+  datosAtleta = {
+    sesiones: ses.data || [],
+    tests: tst.data || [],
+    metricas: met.data || [],
+    perfil: per.data || null
+  };
+  renderResumen();
+  renderHistorial();
+  renderCarga();
+  renderProgreso();
+}
+
+function renderResumen() {
+  const hoy = new Date();
+  const hoyIso = iso(hoy);
+  const ini = iso(lunesDe(hoy));
+  const fin = iso(sumarDias(lunesDe(hoy), 6));
+  const sem = datosAtleta.sesiones.filter(p => p.fecha >= ini && p.fecha <= fin);
+  const cargaSem = sem.reduce((a, p) => a + cargaSesion(p), 0);
+  const kmSem = sem.reduce((a, p) => a + (Number(p.km_reales) || 0), 0);
+  const mes = hoyIso.slice(0, 7);
+  const delMes = datosAtleta.sesiones.filter(p => p.fecha.startsWith(mes) && p.fecha <= hoyIso);
+  const hechas = delMes.filter(p => p.estado === 'hecha').length;
+  let objetivo = 'Sin fecha de objetivo';
+  if (datosAtleta.perfil && datosAtleta.perfil.fecha_objetivo) {
+    const dias = Math.ceil((new Date(datosAtleta.perfil.fecha_objetivo + 'T00:00:00') - new Date(hoyIso + 'T00:00:00')) / 86400000);
+    if (dias >= 0) objetivo = `${dias} días para ${datosAtleta.perfil.objetivo || 'tu objetivo'}`;
+  }
+  const items = [
+    ['Carga esta semana', cargaSem ? Math.round(cargaSem) : '—'],
+    ['Km esta semana', kmSem ? kmSem.toFixed(1) : '—'],
+    ['Hechas este mes', `${hechas} / ${delMes.length}`],
+    ['Objetivo', objetivo]
+  ];
+  const box = $('resumen-atleta');
+  box.innerHTML = '';
+  items.forEach(([label, valor]) => {
+    const d = document.createElement('div');
+    d.className = 'stat';
+    const b = document.createElement('b');
+    b.textContent = valor;
+    const sm = document.createElement('small');
+    sm.textContent = label;
+    d.append(b, sm);
+    box.appendChild(d);
+  });
+}
+
+function renderHistorial() {
+  const hoyIso = iso(new Date());
+  const box = $('historial-a');
+  box.innerHTML = '';
+  const pasadas = datosAtleta.sesiones.filter(p => p.fecha <= hoyIso);
+  if (!pasadas.length) {
+    box.textContent = 'Todavía no hay sesiones en las últimas 12 semanas.';
+    return;
+  }
+  pasadas.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'hist-item';
+    const titulo = document.createElement('strong');
+    titulo.textContent = `${p.fecha} · ${(p.descripcion || p.tipo || 'Sesión').split(' — ')[0]}`;
+    const det = document.createElement('div');
+    det.className = 'muted';
+    det.textContent = `${p.estado || 'pendiente'} · ${p.duracion_min ?? '-'} min · esfuerzo ${p.rpe ?? '-'} · ${p.km_reales ? p.km_reales + ' km' : 'sin km'}`;
+    row.append(titulo, det);
+    if (p.notas_atleta) {
+      const n = document.createElement('div');
+      n.className = 'muted';
+      n.textContent = '“' + p.notas_atleta + '”';
+      row.appendChild(n);
+    }
+    row.onclick = () => { mostrarTabA('cal'); mostrarDetalle(p); };
+    box.appendChild(row);
+  });
+}
+
+function renderCarga() {
+  const box = $('carga-a');
+  box.innerHTML = '';
+  const hoy = new Date();
+  const lunes = lunesDe(hoy);
+  const semanas = [];
+  for (let k = 11; k >= 0; k--) {
+    const ini = sumarDias(lunes, -7 * k);
+    const fin = sumarDias(ini, 6);
+    const ses = datosAtleta.sesiones.filter(p => p.fecha >= iso(ini) && p.fecha <= iso(fin) && p.fecha <= iso(hoy));
+    semanas.push({
+      ini,
+      carga: ses.reduce((a, p) => a + cargaSesion(p), 0),
+      km: ses.reduce((a, p) => a + (Number(p.km_reales) || 0), 0)
+    });
+  }
+  const actual = semanas[11].carga;
+  const previas = semanas.slice(8, 11);
+  const media = previas.reduce((a, s) => a + s.carga, 0) / 3;
+
+  const texto = document.createElement('p');
+  if (!media) {
+    texto.textContent = 'Necesito unas semanas con el esfuerzo registrado para calcular tu equilibrio de carga.';
+  } else {
+    const r = actual / media;
+    const aviso = r < 0.8 ? 'Carga baja: puedes subirla un poco.'
+      : r <= 1.3 ? 'Carga equilibrada.'
+      : 'Carga alta: cuida la recuperación.';
+    texto.textContent = `Esta semana llevas un ${Math.round(r * 100)}% de la media de las 3 anteriores. ${aviso}`;
+  }
+  box.appendChild(texto);
+
+  const max = Math.max(1, ...semanas.map(s => s.carga));
+  semanas.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'barra-row';
+    const lab = document.createElement('div');
+    lab.className = 'muted';
+    lab.textContent = fechaCorta(s.ini);
+    const fondo = document.createElement('div');
+    fondo.className = 'barra-fondo';
+    const barra = document.createElement('div');
+    barra.className = 'barra';
+    barra.style.width = `${(s.carga / max) * 100}%`;
+    fondo.appendChild(barra);
+    const val = document.createElement('div');
+    val.className = 'muted';
+    val.textContent = `${Math.round(s.carga)} · ${s.km ? s.km.toFixed(1) + ' km' : '—'}`;
+    row.append(lab, fondo, val);
+    box.appendChild(row);
+  });
+}
+
+function renderProgreso() {
+  const tb = $('tests-a');
+  tb.innerHTML = '';
+  const tests = datosAtleta.tests;
+  if (!tests.length) tb.textContent = 'Todavía no tienes tests registrados.';
+  ['5k', 'cooper'].forEach(tipo => {
+    const lista = tests.filter(t => t.tipo === tipo);
+    if (!lista.length) return;
+    const titulo = document.createElement('strong');
+    titulo.textContent = tipo === '5k' ? '5 km' : 'Cooper 12 min';
+    tb.appendChild(titulo);
+    if (lista.length > 1) {
+      const primero = Number(lista[0].resultado);
+      const ultimo = Number(lista[lista.length - 1].resultado);
+      const txt = document.createElement('div');
+      txt.className = 'muted';
+      if (tipo === '5k') {
+        const mejora = primero - ultimo;
+        txt.textContent = mejora > 0 ? `Has mejorado ${Math.round(mejora)} s desde el primer test`
+          : mejora < 0 ? `Has perdido ${Math.round(-mejora)} s desde el primer test` : 'Sin cambios';
+      } else {
+        const mejora = ultimo - primero;
+        txt.textContent = mejora > 0 ? `Has sumado ${Math.round(mejora)} m desde el primer test`
+          : mejora < 0 ? `Has bajado ${Math.round(-mejora)} m desde el primer test` : 'Sin cambios';
+      }
+      tb.appendChild(txt);
+    }
+    lista.slice().reverse().forEach(t => {
+      const d = document.createElement('div');
+      d.className = 'zona';
+      d.textContent = `${t.fecha} · ${tipo === '5k' ? formatoTiempo(t.resultado) + ' (5 km)' : t.resultado + ' m (Cooper)'} · ${t.nivel_sugerido || ''}`;
+      tb.appendChild(d);
+    });
+  });
+
+  const mb = $('metricas-a');
+  mb.innerHTML = '';
+  const met = datosAtleta.metricas;
+  const media = (arr, k) => {
+    const v = arr.map(x => x[k]).filter(x => x !== null && x !== undefined && x !== '').map(Number);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  };
+  const rec = met.slice(0, 7), ant = met.slice(7, 14);
+  ['fc_reposo', 'hrv'].forEach(k => {
+    const a = media(rec, k), b = media(ant, k);
+    if (a === null || b === null) return;
+    const t = document.createElement('div');
+    t.className = 'muted';
+    const nombre = k === 'fc_reposo' ? 'Pulsaciones en reposo' : 'HRV';
+    t.textContent = `${nombre}: media de los últimos 7 días ${a.toFixed(0)} frente a ${b.toFixed(0)} de los 7 anteriores`;
+    mb.appendChild(t);
+  });
+  met.slice(0, 30).forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'zona';
+    d.textContent = `${m.fecha} · FC reposo ${m.fc_reposo ?? '-'} · HRV ${m.hrv ?? '-'} · Peso ${m.peso_kg ?? '-'} · Sueño ${m.sueno_h ?? '-'} h · Estrés ${m.estres ?? '-'}`;
+    mb.appendChild(d);
+  });
+}
+
+$('m-guardar').onclick = async () => {
+  const num = (id) => {
+    const v = $(id).value.trim();
+    return v === '' ? null : Number(v.replace(',', '.'));
+  };
+  const fila = {
+    atleta_id: miAtleta.id,
+    fecha: $('m-fecha').value || iso(new Date()),
+    fc_reposo: num('m-fc'),
+    hrv: num('m-hrv'),
+    peso_kg: num('m-peso'),
+    sueno_h: num('m-sueno'),
+    estres: num('m-estres')
+  };
+  const valores = [fila.fc_reposo, fila.hrv, fila.peso_kg, fila.sueno_h, fila.estres];
+  if (valores.every(v => v === null)) return alert('Escribe al menos un dato.');
+  if (valores.some(v => v !== null && Number.isNaN(v))) return alert('Revisa los números.');
+  const { error } = await sb.from('metricas').upsert(fila, { onConflict: 'atleta_id,fecha' });
+  if (error) return alert(error.message);
+  ['m-fc', 'm-hrv', 'm-peso', 'm-sueno', 'm-estres'].forEach(id => { $(id).value = ''; });
+  cargarTodoAtleta();
+};
+
 function mostrarDetalle(p) {
   const partes = (p.descripcion || '').split(' — ');
   $('det-titulo').textContent = partes[0] || p.tipo || 'Sesión';
   $('det-meta').textContent = `${p.fecha} · ${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
   $('det-texto').textContent = partes.slice(1).join(' — ') || 'Sin explicación adicional.';
   $('det-estado').value = p.estado || 'pendiente';
-  $('det-estado').onchange = async () => {
-    const { error } = await sb.from('sesiones_planificadas')
-      .update({ estado: $('det-estado').value }).eq('id', p.id);
+  $('det-rpe').value = p.rpe ?? '';
+  $('det-km').value = p.km_reales ?? '';
+  $('det-notas').value = p.notas_atleta || '';
+  $('det-guardar').onclick = async () => {
+    const rpe = $('det-rpe').value ? Number($('det-rpe').value) : null;
+    const kmTxt = $('det-km').value.trim().replace(',', '.');
+    const km = kmTxt ? Number(kmTxt) : null;
+    if (km !== null && Number.isNaN(km)) return alert('Los km deben ser un número.');
+    const { error } = await sb.from('sesiones_planificadas').update({
+      estado: $('det-estado').value,
+      rpe,
+      km_reales: km,
+      notas_atleta: $('det-notas').value.trim() || null
+    }).eq('id', p.id);
     if (error) return alert(error.message);
+    $('detalle-atleta').classList.add('oculto');
     cargarSemana();
+    cargarTodoAtleta();
   };
   $('detalle-atleta').classList.remove('oculto');
   $('detalle-atleta').scrollIntoView({ behavior: 'smooth', block: 'start' });
