@@ -47,6 +47,7 @@ button.sec{background:#ddd;color:#1d1f21}
 button.gold{background:#D9DDE0;color:#1d1f21;font-weight:700}
 button.danger{background:#c0392b}
 button.mini{padding:4px 10px;font-size:13px;margin:0;width:auto}
+button.link{background:none;color:#1d1f21;text-decoration:underline;padding:8px 4px;margin:4px 0;width:auto;display:block}
 
 /* Títulos de sección: franja oscura como en la app */
 .cab{background:#2e3133;color:#D9DDE0;padding:6px 10px;border-radius:8px;margin:12px 0 8px;font-size:15px;font-weight:700}
@@ -115,7 +116,8 @@ h3{margin:12px 0 6px;font-size:15px}
     <input id="password" type="password" placeholder="Contraseña">
     <label class="ver"><input type="checkbox" id="ver-pass"> Mostrar contraseña</label>
     <button id="btn-login" class="gold">Entrar</button>
-    <button id="btn-olvido" class="sec">He olvidado la contraseña</button>
+    <button id="btn-olvido" class="link">He olvidado la contraseña</button>
+    <button id="btn-registro" class="link">Crear cuenta nueva</button>
     <p id="error" class="msg err" style="display:none"></p>
   </div>
 
@@ -303,6 +305,25 @@ $('btn-login').onclick = async () => {
   });
   mostrarError($('error'), error ? error.message : '');
   if (!error) mostrarSegunSesion();
+};
+
+$('btn-registro').onclick = async () => {
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  if (!email || password.length < 6) {
+    return mostrarError($('error'), 'Escribe un email y una contraseña de al menos 6 caracteres.');
+  }
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) return mostrarError($('error'), error.message);
+  if (data.session) {
+    mostrarError($('error'), '');
+    mostrarSegunSesion();
+  } else {
+    mostrarError($('error'), 'Cuenta creada. Revisa tu email para confirmarla y después entra.');
+  }
 };
 
 $('btn-olvido').onclick = async () => {
