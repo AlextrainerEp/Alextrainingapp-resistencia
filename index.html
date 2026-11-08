@@ -123,6 +123,7 @@ h3{margin:12px 0 6px;font-size:15px}
 <main>
   <div id="login" class="card login">
     <img class="entrada" src="logo-login.png" alt="Alex Training Lab" onerror="this.remove()">
+    <input id="nombre-registro" type="text" placeholder="Nombre y apellidos (solo para crear cuenta)">
     <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Contraseña">
     <label class="ver"><input type="checkbox" id="ver-pass"> Mostrar contraseña</label>
@@ -161,6 +162,9 @@ h3{margin:12px 0 6px;font-size:15px}
       <div class="row">
         <input id="acceso-email" type="email" placeholder="Email de acceso">
         <button id="btn-acceso" class="sec">Guardar y liberar</button>
+      </div>
+      <div class="row">
+        <button id="btn-asignar" class="gold oculto">Asignarme este atleta</button>
       </div>
       <div class="row" style="margin-top:10px">
         <button id="btn-borrar-atleta" class="sec" style="color:#b00020">Eliminar atleta</button>
@@ -278,7 +282,7 @@ h3{margin:12px 0 6px;font-size:15px}
   </div>
   <div id="pendiente" class="card oculto">
     <div class="cab">Cuenta pendiente</div>
-    <p>Tu cuenta todavía no está vinculada a un entrenador. Pide a tu entrenador que te dé de alta con este mismo email.</p>
+    <p>Tu cuenta está registrada. Tu entrenador tiene que asignarte a su cuenta para ver tu calendario. Avísale para que lo haga.</p>
   </div>
 
   <div id="vista-atleta" class="oculto">
@@ -442,7 +446,14 @@ async function mostrarSegunSesion() {
   const esEntrenador = email === EMAIL_ENTRENADOR || await esAdminCuenta(miUserId);
   if (esEntrenador) return modoEntrenador();
   const atleta = await buscarFichaAtleta(miUserId, session.user.email);
-  if (atleta) return modoAtleta(atleta);
+  if (atleta && atleta.entrenador_id) return modoAtleta(atleta);
+  const nombre = session.user.user_metadata && session.user.user_metadata.nombre;
+  if (!atleta && nombre) {
+    const { error } = await sb.from('atletas').insert({
+      user_id: miUserId, nombre, email: session.user.email
+    });
+    if (error) alert('No se pudo crear tu ficha: ' + error.message);
+  }
   modoPendiente();
 }
 
@@ -742,6 +753,16 @@ $('btn-acceso').onclick = async () => {
   alert('Listo. Cuando esa persona se registre con este email, su cuenta quedará vinculada a esta ficha.');
 };
 
+$('btn-asignar').onclick = async () => {
+  const { error } = await sb.from('atletas')
+    .update({ entrenador_id: miUserId }).eq('id', atletaActual.id);
+  if (error) return alert(error.message);
+  atletaActual.entrenador_id = miUserId;
+  $('btn-asignar').classList.add('oculto');
+  cargarAtletas();
+  alert('Atleta asignado a tu cuenta.');
+};
+
 $('btn-borrar-atleta').onclick = async () => {
   const a = atletaActual;
   if (!a) return;
@@ -815,12 +836,16 @@ $('btn-login').onclick = async () => {
 $('btn-registro').onclick = async () => {
   const email = $('email').value.trim();
   const password = $('password').value;
-  if (!email || password.length < 6) {
-    return mostrarError($('error'), 'Escribe un email y una contraseña de al menos 6 caracteres.');
+  const nombre = $('nombre-registro').value.trim();
+  if (!nombre || !email || password.length < 6) {
+    return mostrarError($('error'), 'Escribe tu nombre, un email y una contraseña de al menos 6 caracteres.');
   }
   const { data, error } = await sb.auth.signUp({
     email, password,
-    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    options: {
+      data: { nombre },
+      emailRedirectTo: window.location.origin + window.location.pathname
+    }
   });
   if (error) return mostrarError($('error'), error.message);
   if (data.session) {
@@ -882,7 +907,7 @@ $('btn-crear').onclick = async () => {
 };
 
 async function cargarAtletas() {
-  const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca, email, user_id').order('nombre');
+  const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca, email, user_id, entrenador_id').order('nombre');
   if (error) return alert(error.message);
   $('lista').innerHTML = '';
   data.forEach(a => {
@@ -902,6 +927,7 @@ function abrirFicha(atleta) {
   if (atleta.nivel) $('aplicar-nivel').value = atleta.nivel;
   $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
   $('acceso-email').value = atleta.email || '';
+  $('btn-asignar').classList.toggle('oculto', !!atleta.entrenador_id);
   $('acceso-estado').textContent = atleta.user_id
     ? 'Vinculada a una cuenta registrada'
     : 'Sin cuenta: se vinculará al registrarse con este email';
