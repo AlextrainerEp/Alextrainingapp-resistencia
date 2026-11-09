@@ -112,6 +112,9 @@ h3{margin:12px 0 6px;font-size:15px}
 .tabt.on{background:#D9DDE0;color:#1d1f21;font-weight:700}
 .secc{display:none}
 .secc.on{display:block}
+@media (hover:hover) and (pointer:fine){
+  .secc.flotante{display:block;position:fixed;top:var(--nav-bottom,60px);left:8px;right:8px;max-height:calc(100vh - var(--nav-bottom,60px) - 12px);overflow:auto;z-index:50;background:#e9ecee;border-radius:12px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+}
 .subs{display:flex;gap:6px;overflow-x:auto;margin:8px 0 4px;padding-bottom:4px}
 .subt{flex:0 0 auto;background:#e3e6e8;color:#1d1f21;border:0;border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;width:auto}
 .subt.on{background:#2e3133;color:#fff;font-weight:700}
@@ -1711,6 +1714,7 @@ $('mover-no').onclick = () => { pendienteMover = null; $('modal-mover').classLis
 $('banner-cancelar').onclick = cancelarSeleccion;
 
 function mostrarTab(id) {
+  document.querySelectorAll('.secc.flotante').forEach(x => x.classList.remove('flotante'));
   document.querySelectorAll('.secc').forEach(x => x.classList.toggle('on', x.dataset.sec === id));
   document.querySelectorAll('#tabs-t .tabt').forEach(x => x.classList.toggle('on', x.dataset.tab === id));
 }
@@ -1720,6 +1724,38 @@ function mostrarSub(id) {
 }
 document.querySelectorAll('#tabs-t .tabt').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
 document.querySelectorAll('.subt').forEach(b => b.onclick = () => mostrarSub(b.dataset.sub));
+
+/* Al pasar el ratón por una pestaña, su contenido aparece superpuesto
+   y se puede trabajar en él. Al hacer clic dentro, se fija como página. */
+const navTrainer = $('tabs-t');
+let cierreFlotante = null;
+function panelActivo() {
+  const on = document.querySelector('.secc.on');
+  return on ? on.dataset.sec : null;
+}
+function abrirFlotante(id) {
+  clearTimeout(cierreFlotante);
+  if (id === panelActivo()) return;
+  document.documentElement.style.setProperty('--nav-bottom', navTrainer.getBoundingClientRect().bottom + 'px');
+  document.querySelectorAll('.secc').forEach(x => x.classList.toggle('flotante', x.dataset.sec === id));
+}
+function cerrarFlotanteDiferido() {
+  clearTimeout(cierreFlotante);
+  cierreFlotante = setTimeout(() => {
+    document.querySelectorAll('.secc.flotante').forEach(x => x.classList.remove('flotante'));
+  }, 300);
+}
+document.querySelectorAll('#tabs-t .tabt').forEach(b => {
+  b.addEventListener('mouseenter', () => abrirFlotante(b.dataset.tab));
+  b.addEventListener('mouseleave', cerrarFlotanteDiferido);
+});
+document.querySelectorAll('.secc').forEach(sec => {
+  sec.addEventListener('mouseenter', () => clearTimeout(cierreFlotante));
+  sec.addEventListener('mouseleave', cerrarFlotanteDiferido);
+  sec.addEventListener('click', () => {
+    if (sec.classList.contains('flotante')) mostrarTab(sec.dataset.sec);
+  });
+});
 
 function moverCalendario(dir) {
   if (vistaMes) mesActual = new Date(mesActual.getFullYear(), mesActual.getMonth() + dir, 1);
