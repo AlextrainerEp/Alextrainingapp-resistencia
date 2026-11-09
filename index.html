@@ -113,7 +113,7 @@ h3{margin:12px 0 6px;font-size:15px}
 .secc{display:none}
 .secc.on{display:block}
 @media (hover:hover) and (pointer:fine){
-  .secc.flotante,.seca.flotante,.subsec.flotante{display:block;position:fixed;top:var(--nav-bottom,60px);left:8px;right:8px;max-height:calc(100vh - var(--nav-bottom,60px) - 12px);overflow:auto;z-index:50;background:#e9ecee;border-radius:12px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+  .secc.flotante,.seca.flotante{display:block;position:fixed;top:var(--nav-bottom,60px);left:8px;right:8px;max-height:calc(100vh - var(--nav-bottom,60px) - 12px);overflow:auto;z-index:50;background:#e9ecee;border-radius:12px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.4)}
 }
 .subs{display:flex;gap:6px;overflow-x:auto;margin:8px 0 4px;padding-bottom:4px}
 .subt{flex:0 0 auto;background:#e3e6e8;color:#1d1f21;border:0;border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;width:auto}
@@ -230,7 +230,7 @@ h3{margin:12px 0 6px;font-size:15px}
     <section class="secc" data-sec="ficha">
     <div id="ficha" class="card oculto">
       <div class="cab" id="ficha-nombre"></div>
-      <nav class="subs" id="subs-ficha">
+      <nav class="subs">
         <button class="subt on" data-sub="calendario">Calendario</button>
         <button class="subt" data-sub="tests">Tests y plan</button>
         <button class="subt" data-sub="zonas">Zonas</button>
@@ -1720,7 +1720,6 @@ function mostrarTab(id) {
   document.querySelectorAll('#tabs-t .tabt').forEach(x => x.classList.toggle('on', x.dataset.tab === id));
 }
 function mostrarSub(id) {
-  document.querySelectorAll('.flotante').forEach(x => x.classList.remove('flotante'));
   document.querySelectorAll('.subsec').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
   document.querySelectorAll('.subt').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
 }
@@ -1730,9 +1729,8 @@ document.querySelectorAll('.subt').forEach(b => b.onclick = () => mostrarSub(b.d
 /* Al pasar el ratón por una pestaña (entrenador o atleta), su contenido aparece
    superpuesto y se puede trabajar en él. Al hacer clic dentro, se fija como página. */
 const ZONAS_FLOTANTES = [
-  { nav: 'tabs-t', secciones: '.secc', clave: 'sec', botones: '.tabt', fijar: id => mostrarTab(id) },
-  { nav: 'tabs-a', secciones: '.seca', clave: 'sa', botones: '.tabt', fijar: id => mostrarTabA(id) },
-  { nav: 'subs-ficha', secciones: '.subsec', clave: 'sub', botones: '.subt', fijar: id => mostrarSub(id) }
+  { nav: 'tabs-t', secciones: '.secc', clave: 'sec', fijar: id => mostrarTab(id) },
+  { nav: 'tabs-a', secciones: '.seca', clave: 'sa', fijar: id => mostrarTabA(id) }
 ];
 let cierreFlotante = null;
 function abrirFlotante(zona, id) {
@@ -1749,8 +1747,8 @@ function cerrarFlotanteDiferido() {
   }, 300);
 }
 ZONAS_FLOTANTES.forEach(zona => {
-  $(zona.nav).querySelectorAll(zona.botones).forEach(b => {
-    const id = b.dataset.tab ?? b.dataset.ta ?? b.dataset.sub;
+  $(zona.nav).querySelectorAll('.tabt').forEach(b => {
+    const id = b.dataset.tab ?? b.dataset.ta;
     b.addEventListener('mouseenter', () => abrirFlotante(zona, id));
     b.addEventListener('mouseleave', cerrarFlotanteDiferido);
   });
