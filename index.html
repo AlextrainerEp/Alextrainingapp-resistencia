@@ -2195,11 +2195,31 @@ mostrarSegunSesion();
     if (!code) return;
 
     try {
-      const r = await fetch(FUNCION_STRAVA, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
-      });
+     const r = await fetch(FUNCION_STRAVA, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': 'const r = await fetch(FUNCION_STRAVA, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': 'PEGA_AQUI',
+    'Authorization': 'Bearer PEGA_AQUI'
+  },
+  body: JSON.stringify({ code })
+});',
+    'Authorization': 'const r = await fetch(FUNCION_STRAVA, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': 'PEGA_AQUI',
+    'Authorization': 'Bearer PEGA_AQUI'
+  },
+  body: JSON.stringify({ code })
+});'
+  },
+  body: JSON.stringify({ code })
+});
       const datos = await r.json();
       if (!r.ok) throw new Error(datos.message || datos.error || 'Error ' + r.status);
 
