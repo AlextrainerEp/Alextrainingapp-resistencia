@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alex Training Lab · Resistencia</title>
 <link rel="manifest" href="manifest.json">
-<button id="conectarStrava" class="strava-btn">Conectar con Strava</button>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -381,6 +380,7 @@ h3{margin:12px 0 6px;font-size:15px}
   </div>
 
   <div id="vista-atleta" class="oculto">
+    <button id="conectarStrava" class="sec" style="margin-bottom:10px">Conectar con Strava</button>
     <nav class="tabs-t" id="tabs-a">
       <button class="tabt on" data-ta="cal">Calendario</button>
       <button class="tabt" data-ta="hist">Historial</button>
@@ -773,43 +773,10 @@ function modoEntrenador() {
   $('cal-fecha').value = iso(new Date());
 }
 
-const CAMPOS_METRICAS = {
-  'm-peso': 'peso_kg', 'm-altura': 'altura_cm', 'm-anos': 'anos_corriendo',
-  'm-km': 'km_semana', 'm-pulso': 'pulso_reposo', 'm-hrv': 'hrv_ms',
-  'm-fcmax': 'fc_max', 'm-sueno': 'horas_sueno', 'm-dias': 'dias_disponibles',
-  'm-nivel': 'nivel_percibido', 'm-objetivo': 'objetivo',
-  'm-lesiones': 'lesiones', 'm-comentarios': 'comentarios'
-};
 const ETIQUETAS_METRICAS = {
-  peso_kg: 'Peso', altura_cm: 'Altura', anos_corriendo: 'Años corriendo', km_semana: 'Km/semana',
-  pulso_reposo: 'Pulso reposo', hrv_ms: 'HRV', fc_max: 'FC máx', horas_sueno: 'Sueño',
-  dias_disponibles: 'Días/semana', nivel_percibido: 'Nivel percibido', objetivo: 'Objetivo',
-  lesiones: 'Lesiones', comentarios: 'Comentarios'
+  fc_reposo: 'Pulso reposo', hrv: 'HRV', peso_kg: 'Peso', sueno_h: 'Sueño', estres: 'Estrés'
 };
 
-async function cargarMetricasAtleta(atletaId) {
-  const { data } = await sb.from('metricas').select('*')
-    .eq('atleta_id', atletaId).order('fecha', { ascending: false }).limit(1);
-  if (!data || !data.length) return;
-  const m = data[0];
-  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
-    $(id).value = m[campo] ?? '';
-  });
-  $('m-estado').textContent = `Última actualización: ${m.fecha}`;
-}
-
-$('m-guardar').onclick = async () => {
-  const fila = { atleta_id: miAtleta.id };
-  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
-    const v = $(id).value.trim();
-    const numerico = ['peso_kg','altura_cm','anos_corriendo','km_semana','pulso_reposo','hrv_ms',
-      'fc_max','horas_sueno','dias_disponibles'].includes(campo);
-    fila[campo] = v === '' ? null : (numerico ? Number(v) : v);
-  });
-  const { error } = await sb.from('metricas').insert(fila);
-  if (error) return alert(error.message);
-  $('m-estado').textContent = `Guardado el ${new Date().toLocaleDateString('es-ES')}`;
-};
 
 async function cargarMetricasTrainer(atletaId) {
   const box = $('metricas-t');
@@ -841,7 +808,6 @@ async function modoAtleta(a) {
   mostrarTabA('cal');
   $('m-fecha').value = iso(new Date());
   cargarTodoAtleta();
-  cargarMetricasAtleta(a.id);
 }
 
 async function cargarBibliotecaAtleta() {
@@ -1745,6 +1711,7 @@ $('btn-vista').onclick = alternarVista;
 $('btn-vista-a').onclick = alternarVista;
 
 async function cargarMes() {
+  if (!atletaActual) return;
   const ini = mesActual;
   const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 0);
   const sufijo = modoAtletaActivo ? '-a' : '';
@@ -1811,6 +1778,7 @@ async function cargarMes() {
 }
 
 async function cargarSemana() {
+  if (!atletaActual) return;
   if (vistaMes) return cargarMes();
   const inicio = iso(semanaInicio);
   const fin = iso(sumarDias(semanaInicio, 6));
