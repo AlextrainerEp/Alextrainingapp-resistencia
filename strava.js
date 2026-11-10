@@ -1,6 +1,6 @@
 const FUNCION_STRAVA = 'https://orrfqvrsrjfddhuzleel.supabase.co/functions/v1/strava-token';
 const STRAVA_CLIENT_ID = '295862';
-const SUPABASE_KEY = 'PEGA_AQUI_TU_ANON_KEY';
+const SUPABASE_KEY = 'PJeYDWMoLoRnZAT3o3jGWw_eBh5uwSR';
 const REDIRECT = 'https://alextrainerep.github.io/Alextrainingapp-resistencia/';
 
 document.getElementById('conectarStrava').addEventListener('click', () => {
