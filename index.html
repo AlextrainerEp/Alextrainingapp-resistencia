@@ -2178,7 +2178,42 @@ mostrarSegunSesion();
 </div>
 </body>
  <script>
-   document.getElementById('conectarStrava').addEventListener('click', function() {
+<script>
+  const FUNCION_STRAVA = 'https://orrfqvrsrjfddhuzleel.supabase.co/functions/v1/strava-token';
+
+  // 1. Botón: lleva a Strava para autorizar
+  document.getElementById('conectarStrava').addEventListener('click', () => {
+    const url = 'https://www.strava.com/oauth/authorize?client_id=295862' +
+      '&response_type=code' +
+      '&redirect_uri=' + encodeURIComponent('https://alextrainerep.github.io/Alextrainingapp-resistencia/') +
+      '&approval_prompt=force&scope=read,activity:read';
+    window.location = url;
+  });
+
+  // 2. Si Strava nos devuelve con ?code=..., lo cambiamos por tokens
+  (async () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return;
+
+    try {
+      const r = await fetch(FUNCION_STRAVA, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      const datos = await r.json();
+      if (!r.ok) throw new Error(datos.message || datos.error || 'Error ' + r.status);
+
+      console.log('Strava conectado:', datos.athlete?.firstname);
+      alert('Strava conectado correctamente');
+      // Quita el code de la URL para que no se reutilice al recargar
+      history.replaceState(null, '', window.location.pathname);
+    } catch (e) {
+      alert('No se pudo conectar con Strava: ' + e.message);
+    }
+  })();
+</script>   document.getElementById('conectarStrava').addEventListener('click', function() {
      window.location = 'https://www.strava.com/oauth/authorize?client_id=295862_ID&response_type=code&redirect_uri=https://alextrainerep.github.io/Alextrainingapp-resistencia/&approval_prompt=force&scope=read,activity:read';
    });
    </script>
