@@ -2175,62 +2175,6 @@ mostrarSegunSesion();
     <div class="acciones"><button id="dia-cerrar" class="link">Cerrar</button></div>
   </div>
 </div>
+<script src="strava.js"></script>
 </body>
-<script>
-  const FUNCION_STRAVA = 'https://orrfqvrsrjfddhuzleel.supabase.co/functions/v1/strava-token';
-
-  // 1. Botón: lleva a Strava para autorizar
-  document.getElementById('conectarStrava').addEventListener('click', () => {
-    const url = 'https://www.strava.com/oauth/authorize?client_id=295862' +
-      '&response_type=code' +
-      '&redirect_uri=' + encodeURIComponent('https://alextrainerep.github.io/Alextrainingapp-resistencia/') +
-      '&approval_prompt=force&scope=read,activity:read';
-    window.location = url;
-  });
-
-  // 2. Si Strava nos devuelve con ?code=..., lo cambiamos por tokens
-  (async () => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (!code) return;
-
-    try {
-     const r = await fetch(FUNCION_STRAVA, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': 'const r = await fetch(FUNCION_STRAVA, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': 'eYDWMoLoRnZAT3o3jGWw_eBh5uwSR',
-    'Authorization': 'Bearer PEGA_AQUI'
-  },
-  body: JSON.stringify({ code })
-});',
-    'Authorization': 'const r = await fetch(FUNCION_STRAVA, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': 'eYDWMoLoRnZAT3o3jGWw_eBh5uwSR'
-  },
-  body: JSON.stringify({ code })
-});'
-  },
-  body: JSON.stringify({ code })
-});
-      const datos = await r.json();
-      if (!r.ok) throw new Error(datos.message || datos.error || 'Error ' + r.status);
-
-      console.log('Strava conectado:', datos.athlete?.firstname);
-      alert('Strava conectado correctamente');
-      // Quita el code de la URL para que no se reutilice al recargar
-      history.replaceState(null, '', window.location.pathname);
-    } catch (e) {
-      alert('No se pudo conectar con Strava: ' + e.message);
-    }
-  })();
-</script>  
-   </script>
-   </body>
 </html>
