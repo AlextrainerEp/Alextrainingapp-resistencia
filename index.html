@@ -2112,7 +2112,6 @@ $('btn-plan-aplicar').onclick = async () => {
     atleta_id: atletaId, nombre: plan.nombre, fecha_inicio: iso(base), fecha_fin: fin
   }).select().single();
   if (eb) return alert(eb.message);
-
   const sesiones = filas.map(f => ({
     atleta_id: atletaId,
     bloque_id: bloque.id,
