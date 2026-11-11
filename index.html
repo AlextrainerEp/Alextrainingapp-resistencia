@@ -192,6 +192,10 @@ h3{margin:12px 0 6px;font-size:15px}
 .forma-leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;margin-top:4px}
 .forma-leyenda i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px}
 .nota-entrenador{background:#fff8e1;border-left:4px solid #e0b43a;border-radius:6px;padding:8px 10px;margin:8px 0;font-size:14px;white-space:pre-line}
+.importar{margin:10px 0;padding:10px;border:1px dashed #888;border-radius:8px;background:rgba(255,255,255,.4)}
+.importar summary{cursor:pointer;font-weight:700}
+.imp-tabla{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+.imp-tabla td,.imp-tabla th{border-bottom:1px solid rgba(0,0,0,.15);padding:4px 6px;text-align:left;vertical-align:top}
 </style>
 </head>
 <body>
@@ -342,6 +346,14 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
       <button id="btn-asignar">Añadir al calendario</button>
+      <details class="importar">
+        <summary>Importar entrenamiento desde Excel o Google Sheets</summary>
+        <p class="muted">Una fila por sesión, con estas columnas: Fecha, Tipo, Nombre, Descripción y Duración (min). Desde Google Sheets: Archivo → Descargar → Microsoft Excel (.xlsx).</p>
+        <button id="btn-plantilla" class="sec" type="button">Descargar plantilla</button>
+        <input id="imp-archivo" type="file" accept=".xlsx,.xls,.csv">
+        <div id="imp-vista"></div>
+        <button id="imp-cargar" class="oculto" type="button">Cargar al calendario</button>
+      </details>
       <div class="leyenda" data-leyenda></div>
       <div class="leyenda"><span class="leg"><i class="punto" style="background:#2e7d32"></i>Hecha según el plan</span><span class="leg"><i class="punto" style="background:#f9a825"></i>Parcial o de más</span><span class="leg"><i class="punto" style="background:#ef6c00"></i>Muy distinta</span><span class="leg"><i class="punto" style="background:#c62828"></i>Sin hacer</span></div>
       <div id="semana"></div>
@@ -918,6 +930,153 @@ function mostrarTabA(id) {
   document.querySelectorAll('#tabs-a .tabt').forEach(x => x.classList.toggle('on', x.dataset.ta === id));
 }
 document.querySelectorAll('#tabs-a .tabt').forEach(b => b.onclick = () => mostrarTabA(b.dataset.ta));
+
+/* ---------- IMPORTAR DESDE EXCEL / GOOGLE SHEETS ---------- */
+let libXLSX = null;
+let filasImportar = [];
+async function cargarXLSX() {
+  if (!libXLSX) libXLSX = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs');
+  return libXLSX;
+}
+function sinAcentos(t) {
+  return String(t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+function fechaDeCelda(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number') {
+    if (v < 20000 || v > 80000) return null;
+    return new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 864e5).toISOString().slice(0, 10);
+  }
+  const t = String(v).trim();
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    const a = m[3].length === 2 ? '20' + m[3] : m[3];
+    if (Number(m[2]) > 12 || Number(m[1]) > 31) return null;
+    return `${a}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  return null;
+}
+function tipoDeCelda(v) {
+  const t = sinAcentos(v);
+  if (!t) return 'otro';
+  if (t.includes('serie') || t.includes('interval') || t.includes('cuesta') || t.includes('fartlek')) return 'series';
+  if (t.includes('tirada') || t.includes('largo') || t.includes('larga')) return 'tirada';
+  if (t.includes('rodaje') || t.includes('suave') || t.includes('trote') || t.includes('carrera continua')) return 'rodaje';
+  if (t.includes('fuerza') || t.includes('gimnasio') || t.includes('gym')) return 'fuerza';
+  if (t.includes('bici') || t.includes('ciclismo')) return 'bici';
+  if (t.includes('test')) return 'test';
+  return 'otro';
+}
+function interpretarFilas(filas) {
+  const validas = [];
+  let descartadas = 0;
+  filas.forEach(f => {
+    const g = {};
+    Object.keys(f).forEach(k => { g[sinAcentos(k)] = f[k]; });
+    const col = (...nombres) => {
+      const k = Object.keys(g).find(c => nombres.some(n => c.startsWith(n)));
+      return k ? g[k] : '';
+    };
+    const fecha = fechaDeCelda(col('fecha', 'dia', 'date'));
+    const nombre = String(col('nombre', 'sesion', 'entrenamiento', 'titulo') ?? '').trim();
+    const desc = String(col('descripcion', 'detalle', 'notas', 'explicacion') ?? '').trim();
+    const tipoTxt = col('tipo');
+    const dur = parseInt(col('duracion', 'minutos', 'min', 'tiempo'), 10);
+    if (!fecha || (!nombre && !desc && !tipoTxt)) { if (Object.values(f).some(x => x !== '')) descartadas++; return; }
+    const titulo = nombre || String(tipoTxt || 'Sesión').trim();
+    validas.push({
+      fecha,
+      tipo: tipoDeCelda(tipoTxt || nombre),
+      descripcion: titulo + (desc ? ' — ' + desc : ''),
+      duracion_min: Number.isFinite(dur) ? dur : null
+    });
+  });
+  validas.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  return { validas, descartadas };
+}
+$('imp-archivo').onchange = async (e) => {
+  const archivo = e.target.files[0];
+  const vista = $('imp-vista');
+  filasImportar = [];
+  $('imp-cargar').classList.add('oculto');
+  vista.innerHTML = '';
+  if (!archivo) return;
+  try {
+    const X = await cargarXLSX();
+    const esCsv = /\.csv$/i.test(archivo.name);
+    const libro = esCsv
+      ? X.read(await archivo.text(), { type: 'string', raw: true })
+      : X.read(await archivo.arrayBuffer());
+    const hoja = libro.Sheets[libro.SheetNames[0]];
+    const { validas, descartadas } = interpretarFilas(X.utils.sheet_to_json(hoja, { defval: '', raw: true }));
+    if (!validas.length) {
+      vista.innerHTML = '<p class="msg err" style="display:block">No he encontrado sesiones. Revisa que la primera fila tenga los títulos Fecha, Tipo, Nombre, Descripción y Duración, y que las fechas sean válidas.</p>';
+      return;
+    }
+    filasImportar = validas;
+    const tabla = document.createElement('table');
+    tabla.className = 'imp-tabla';
+    tabla.innerHTML = '<tr><th>Fecha</th><th>Tipo</th><th>Sesión</th><th>Min</th></tr>';
+    validas.slice(0, 8).forEach(v => {
+      const tr = document.createElement('tr');
+      [v.fecha, v.tipo, v.descripcion, v.duracion_min ?? '-'].forEach(c => {
+        const td = document.createElement('td');
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      tabla.appendChild(tr);
+    });
+    const res = document.createElement('p');
+    res.textContent = `${validas.length} sesiones encontradas, del ${validas[0].fecha} al ${validas[validas.length - 1].fecha}.` +
+      (validas.length > 8 ? ' Se muestran las 8 primeras.' : '') +
+      (descartadas ? ` ${descartadas} filas descartadas por no tener fecha válida o contenido.` : '');
+    vista.append(res, tabla);
+    $('imp-cargar').textContent = `Cargar ${validas.length} sesiones al calendario de ${atletaActual.nombre}`;
+    $('imp-cargar').classList.remove('oculto');
+  } catch (err) {
+    vista.innerHTML = '';
+    const pe = document.createElement('p');
+    pe.className = 'msg err';
+    pe.style.display = 'block';
+    pe.textContent = 'No he podido leer el archivo: ' + (err.message || err);
+    vista.appendChild(pe);
+  }
+};
+$('imp-cargar').onclick = async () => {
+  if (!filasImportar.length || !atletaActual) return;
+  const filas = filasImportar.map(v => ({ ...v, atleta_id: atletaActual.id }));
+  const { error } = await sb.from('sesiones_planificadas').insert(filas);
+  if (error) return alert(error.message);
+  alert(`${filas.length} sesiones cargadas en el calendario de ${atletaActual.nombre}.`);
+  semanaInicio = lunesDe(new Date(filas[0].fecha + 'T00:00:00'));
+  mesActual = new Date(filas[0].fecha + 'T00:00:00');
+  filasImportar = [];
+  $('imp-archivo').value = '';
+  $('imp-vista').innerHTML = '';
+  $('imp-cargar').classList.add('oculto');
+  cargarSemana();
+};
+$('btn-plantilla').onclick = async () => {
+  try {
+    const X = await cargarXLSX();
+    const lunes = lunesDe(new Date());
+    const f = n => { const d = sumarDias(lunes, n); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; };
+    const hoja = X.utils.aoa_to_sheet([
+      ['Fecha', 'Tipo', 'Nombre', 'Descripción', 'Duración (min)'],
+      [f(1), 'Series', 'Series 6x800', 'Calentamiento 15 min, 6x800 m a ritmo de 5 km con 2 min de recuperación', 60],
+      [f(3), 'Rodaje', 'Rodaje suave', 'Ritmo de conversación', 45],
+      [f(5), 'Tirada larga', 'Tirada larga', 'Ritmo cómodo, últimos 15 min algo más rápido', 80]
+    ]);
+    hoja['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 60 }, { wch: 14 }];
+    const libro = X.utils.book_new();
+    X.utils.book_append_sheet(libro, hoja, 'Entrenamiento');
+    X.writeFile(libro, 'plantilla-entrenamiento.xlsx');
+  } catch (err) {
+    alert('No se ha podido crear la plantilla: ' + (err.message || err));
+  }
+};
 
 /* ---------- PASOS DE SESIÓN ---------- */
 let pasosForm = [];
