@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Resistencia">
 <meta name="theme-color" content="#2e3133">
@@ -346,14 +347,6 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
       <button id="btn-asignar">Añadir al calendario</button>
-      <details class="importar">
-        <summary>Importar entrenamiento desde Excel o Google Sheets</summary>
-        <p class="muted">Una fila por sesión, con estas columnas: Fecha, Tipo, Nombre, Descripción y Duración (min). Desde Google Sheets: Archivo → Descargar → Microsoft Excel (.xlsx).</p>
-        <button id="btn-plantilla" class="sec" type="button">Descargar plantilla</button>
-        <input id="imp-archivo" type="file" accept=".xlsx,.xls,.csv">
-        <div id="imp-vista"></div>
-        <button id="imp-cargar" class="oculto" type="button">Cargar al calendario</button>
-      </details>
       <div class="leyenda" data-leyenda></div>
       <div class="leyenda"><span class="leg"><i class="punto" style="background:#2e7d32"></i>Hecha según el plan</span><span class="leg"><i class="punto" style="background:#f9a825"></i>Parcial o de más</span><span class="leg"><i class="punto" style="background:#ef6c00"></i>Muy distinta</span><span class="leg"><i class="punto" style="background:#c62828"></i>Sin hacer</span></div>
       <div id="semana"></div>
@@ -382,6 +375,32 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <button id="btn-plan-objetivo" class="sec" type="button">Ajustar la fecha para terminar en el objetivo del atleta</button>
       <button id="btn-plan-aplicar">Aplicar plan al calendario</button>
+    </div>
+
+    <div class="card">
+      <div class="cab">Subir entrenamiento desde Excel o Google Sheets</div>
+      <p class="muted">Una fila por sesión, con las columnas Fecha, Tipo, Nombre, Descripción y Duración (min). La columna Nivel es opcional. Desde Google Sheets: Archivo → Descargar → Microsoft Excel (.xlsx).</p>
+      <div class="row">
+        <input id="imp-archivo" type="file" accept=".xlsx,.xls,.csv,.ods">
+        <button id="btn-plantilla" class="sec" type="button">Descargar plantilla</button>
+      </div>
+      <div id="imp-vista"></div>
+      <div id="imp-destinos" class="oculto">
+        <h3>Ponerlo en el calendario de un atleta</h3>
+        <div class="row">
+          <select id="imp-atleta"></select>
+          <button id="imp-cargar" type="button">Cargar al calendario</button>
+        </div>
+        <h3>Guardarlo en la biblioteca</h3>
+        <div class="row">
+          <select id="imp-nivel">
+            <option value="principiante">Principiante</option>
+            <option value="intermedio">Intermedio</option>
+            <option value="avanzado">Avanzado</option>
+          </select>
+          <button id="imp-biblio" class="sec" type="button">Guardar en la biblioteca</button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -969,9 +988,15 @@ function tipoDeCelda(v) {
   if (t.includes('test')) return 'test';
   return 'otro';
 }
+function nivelDeCelda(v) {
+  const t = sinAcentos(v);
+  if (t.startsWith('prin') || t.startsWith('inic')) return 'principiante';
+  if (t.startsWith('inter') || t.startsWith('medi')) return 'intermedio';
+  if (t.startsWith('avan')) return 'avanzado';
+  return null;
+}
 function interpretarFilas(filas) {
-  const validas = [];
-  let descartadas = 0;
+  const todas = [];
   filas.forEach(f => {
     const g = {};
     Object.keys(f).forEach(k => { g[sinAcentos(k)] = f[k]; });
@@ -982,27 +1007,41 @@ function interpretarFilas(filas) {
     const fecha = fechaDeCelda(col('fecha', 'dia', 'date'));
     const nombre = String(col('nombre', 'sesion', 'entrenamiento', 'titulo') ?? '').trim();
     const desc = String(col('descripcion', 'detalle', 'notas', 'explicacion') ?? '').trim();
-    const tipoTxt = col('tipo');
+    const tipoTxt = String(col('tipo') ?? '').trim();
     const dur = parseInt(col('duracion', 'minutos', 'min', 'tiempo'), 10);
-    if (!fecha || (!nombre && !desc && !tipoTxt)) { if (Object.values(f).some(x => x !== '')) descartadas++; return; }
-    const titulo = nombre || String(tipoTxt || 'Sesión').trim();
-    validas.push({
+    if (!nombre && !desc && !tipoTxt) return;
+    todas.push({
       fecha,
       tipo: tipoDeCelda(tipoTxt || nombre),
-      descripcion: titulo + (desc ? ' — ' + desc : ''),
-      duracion_min: Number.isFinite(dur) ? dur : null
+      nombre: nombre || tipoTxt || 'Sesión',
+      desc,
+      duracion_min: Number.isFinite(dur) ? dur : null,
+      nivel: nivelDeCelda(col('nivel'))
     });
   });
-  validas.sort((a, b) => a.fecha.localeCompare(b.fecha));
-  return { validas, descartadas };
+  todas.sort((a, b) => String(a.fecha || '9').localeCompare(String(b.fecha || '9')));
+  return { todas, validas: todas.filter(x => x.fecha) };
+}
+function limpiarImportacion() {
+  filasImportar = [];
+  $('imp-archivo').value = '';
+  $('imp-vista').innerHTML = '';
+  $('imp-destinos').classList.add('oculto');
 }
 $('imp-archivo').onchange = async (e) => {
   const archivo = e.target.files[0];
   const vista = $('imp-vista');
   filasImportar = [];
-  $('imp-cargar').classList.add('oculto');
+  $('imp-destinos').classList.add('oculto');
   vista.innerHTML = '';
   if (!archivo) return;
+  const aviso = (txt) => {
+    const pe = document.createElement('p');
+    pe.className = 'msg err';
+    pe.style.display = 'block';
+    pe.textContent = txt;
+    vista.appendChild(pe);
+  };
   try {
     const X = await cargarXLSX();
     const esCsv = /\.csv$/i.test(archivo.name);
@@ -1010,53 +1049,73 @@ $('imp-archivo').onchange = async (e) => {
       ? X.read(await archivo.text(), { type: 'string', raw: true })
       : X.read(await archivo.arrayBuffer());
     const hoja = libro.Sheets[libro.SheetNames[0]];
-    const { validas, descartadas } = interpretarFilas(X.utils.sheet_to_json(hoja, { defval: '', raw: true }));
-    if (!validas.length) {
-      vista.innerHTML = '<p class="msg err" style="display:block">No he encontrado sesiones. Revisa que la primera fila tenga los títulos Fecha, Tipo, Nombre, Descripción y Duración, y que las fechas sean válidas.</p>';
-      return;
+    const { todas, validas } = interpretarFilas(X.utils.sheet_to_json(hoja, { defval: '', raw: true }));
+    if (!todas.length) {
+      return aviso('No he encontrado sesiones. Revisa que la primera fila tenga los títulos Fecha, Tipo, Nombre, Descripción y Duración.');
     }
-    filasImportar = validas;
+    filasImportar = todas;
+    const res = document.createElement('p');
+    res.textContent = `${todas.length} sesiones encontradas; ${validas.length} con fecha válida` +
+      (validas.length ? ` (del ${validas[0].fecha} al ${validas[validas.length - 1].fecha}).` : '.') +
+      (todas.length > 8 ? ' Se muestran las 8 primeras.' : '') +
+      (validas.length < todas.length ? ' Las que no tienen fecha solo pueden guardarse en la biblioteca.' : '');
     const tabla = document.createElement('table');
     tabla.className = 'imp-tabla';
     tabla.innerHTML = '<tr><th>Fecha</th><th>Tipo</th><th>Sesión</th><th>Min</th></tr>';
-    validas.slice(0, 8).forEach(v => {
+    todas.slice(0, 8).forEach(v => {
       const tr = document.createElement('tr');
-      [v.fecha, v.tipo, v.descripcion, v.duracion_min ?? '-'].forEach(c => {
+      [v.fecha || 'sin fecha', v.tipo, v.nombre + (v.desc ? ' — ' + v.desc : ''), v.duracion_min ?? '-'].forEach(c => {
         const td = document.createElement('td');
         td.textContent = c;
         tr.appendChild(td);
       });
       tabla.appendChild(tr);
     });
-    const res = document.createElement('p');
-    res.textContent = `${validas.length} sesiones encontradas, del ${validas[0].fecha} al ${validas[validas.length - 1].fecha}.` +
-      (validas.length > 8 ? ' Se muestran las 8 primeras.' : '') +
-      (descartadas ? ` ${descartadas} filas descartadas por no tener fecha válida o contenido.` : '');
     vista.append(res, tabla);
-    $('imp-cargar').textContent = `Cargar ${validas.length} sesiones al calendario de ${atletaActual.nombre}`;
-    $('imp-cargar').classList.remove('oculto');
+    $('imp-destinos').classList.remove('oculto');
   } catch (err) {
-    vista.innerHTML = '';
-    const pe = document.createElement('p');
-    pe.className = 'msg err';
-    pe.style.display = 'block';
-    pe.textContent = 'No he podido leer el archivo: ' + (err.message || err);
-    vista.appendChild(pe);
+    aviso('No he podido leer el archivo: ' + (err.message || err));
   }
 };
 $('imp-cargar').onclick = async () => {
-  if (!filasImportar.length || !atletaActual) return;
-  const filas = filasImportar.map(v => ({ ...v, atleta_id: atletaActual.id }));
+  const atletaId = $('imp-atleta').value;
+  if (!atletaId) return alert('No hay atletas. Añade uno en la pestaña Atletas.');
+  const conFecha = filasImportar.filter(x => x.fecha);
+  if (!conFecha.length) return alert('Ninguna sesión del archivo tiene fecha válida, así que no se puede poner en el calendario.');
+  const nombreAtleta = $('imp-atleta').selectedOptions[0].textContent;
+  if (!confirm(`¿Cargar ${conFecha.length} sesiones en el calendario de ${nombreAtleta}?`)) return;
+  const filas = conFecha.map(v => ({
+    atleta_id: atletaId, fecha: v.fecha, tipo: v.tipo,
+    descripcion: v.nombre + (v.desc ? ' — ' + v.desc : ''), duracion_min: v.duracion_min
+  }));
   const { error } = await sb.from('sesiones_planificadas').insert(filas);
   if (error) return alert(error.message);
-  alert(`${filas.length} sesiones cargadas en el calendario de ${atletaActual.nombre}.`);
-  semanaInicio = lunesDe(new Date(filas[0].fecha + 'T00:00:00'));
-  mesActual = new Date(filas[0].fecha + 'T00:00:00');
-  filasImportar = [];
-  $('imp-archivo').value = '';
-  $('imp-vista').innerHTML = '';
-  $('imp-cargar').classList.add('oculto');
-  cargarSemana();
+  alert(`${filas.length} sesiones cargadas en el calendario de ${nombreAtleta}, desde el ${filas[0].fecha}.`);
+  if (atletaActual && atletaActual.id === atletaId) {
+    semanaInicio = lunesDe(new Date(filas[0].fecha + 'T00:00:00'));
+    mesActual = new Date(filas[0].fecha + 'T00:00:00');
+    cargarSemana();
+  }
+  cargarAtletas();
+};
+$('imp-biblio').onclick = async () => {
+  if (!filasImportar.length) return;
+  const vistos = new Set();
+  const unicas = filasImportar.filter(v => {
+    const k = sinAcentos(v.nombre) + '|' + sinAcentos(v.desc);
+    if (vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+  if (!confirm(`¿Guardar ${unicas.length} sesiones en la biblioteca?`)) return;
+  const filas = unicas.map(v => ({
+    entrenador_id: miUserId, nombre: v.nombre, nivel: v.nivel || $('imp-nivel').value,
+    tipo: v.tipo === 'test' ? 'otro' : v.tipo, duracion_min: v.duracion_min, descripcion: v.desc || null
+  }));
+  const { error } = await sb.from('sesiones_biblioteca').insert(filas);
+  if (error) return alert(error.message);
+  alert(`${filas.length} sesiones guardadas en la biblioteca.`);
+  cargarBiblioteca();
 };
 $('btn-plantilla').onclick = async () => {
   try {
@@ -1064,7 +1123,7 @@ $('btn-plantilla').onclick = async () => {
     const lunes = lunesDe(new Date());
     const f = n => { const d = sumarDias(lunes, n); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; };
     const hoja = X.utils.aoa_to_sheet([
-      ['Fecha', 'Tipo', 'Nombre', 'Descripción', 'Duración (min)'],
+      ['Fecha', 'Tipo', 'Nombre', 'Descripción', 'Duración (min)', 'Nivel'],
       [f(1), 'Series', 'Series 6x800', 'Calentamiento 15 min, 6x800 m a ritmo de 5 km con 2 min de recuperación', 60],
       [f(3), 'Rodaje', 'Rodaje suave', 'Ritmo de conversación', 45],
       [f(5), 'Tirada larga', 'Tirada larga', 'Ritmo cómodo, últimos 15 min algo más rápido', 80]
@@ -1818,6 +1877,8 @@ async function cargarAtletas() {
     $('lista').appendChild(div);
   });
   if (!data.length) $('lista').innerHTML = '<p class="muted">Todavía no hay atletas.</p>';
+  $('imp-atleta').innerHTML = selPlan.innerHTML;
+  if (atletaActual) { $('imp-atleta').value = atletaActual.id; selPlan.value = atletaActual.id; }
   cargarPanelAtletas(data);
 }
 
@@ -1829,6 +1890,7 @@ function abrirFicha(atleta) {
   $('ficha-nombre').textContent = atleta.nombre;
   semanaInicio = lunesDe(new Date());
   if ($('plan-atleta')) $('plan-atleta').value = atleta.id;
+  $('imp-atleta').value = atleta.id;
   $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
   $('acceso-email').value = atleta.email || '';
   $('btn-asignar-atleta').classList.toggle('oculto', !!atleta.entrenador_id);
