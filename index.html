@@ -177,6 +177,21 @@ h3{margin:12px 0 6px;font-size:15px}
   body:has(#panel:not(.oculto)) .fondo,body:has(#vista-atleta:not(.oculto)) .fondo{left:210px}
   main:has(#panel:not(.oculto)),main:has(#vista-atleta:not(.oculto)){max-width:1280px;margin:0;padding-left:230px;padding-right:20px}
 }
+.punto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.25)}
+.fila-atleta{padding:12px 10px;border-bottom:1px solid rgba(0,0,0,.12);cursor:pointer}
+.fila-atleta:hover{background:rgba(255,255,255,.5)}
+.fila-atleta .nom{font-weight:700;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;padding:3px 8px;border-radius:12px;background:#e3e6e8;color:#1d1f21;white-space:nowrap}
+.chip.ok{background:#c8e6c9}.chip.aviso{background:#ffe0b2}.chip.mal{background:#ffcdd2}.chip.info{background:#bbdefb}
+.paso-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.paso-row>*{flex:1 1 70px;margin:0;min-width:0;padding:8px}
+.paso-row>input[type=text]{flex:3 1 170px}
+.paso-row>button{flex:0 0 38px;width:38px}
+.pasos-lista{margin:6px 0 10px;padding-left:22px;font-size:14px;line-height:1.55}
+.forma-leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;margin-top:4px}
+.forma-leyenda i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px}
+.nota-entrenador{background:#fff8e1;border-left:4px solid #e0b43a;border-radius:6px;padding:8px 10px;margin:8px 0;font-size:14px;white-space:pre-line}
 </style>
 </head>
 <body>
@@ -230,7 +245,7 @@ h3{margin:12px 0 6px;font-size:15px}
     </div>
 
     <div class="card">
-      <div class="cab">Atletas</div>
+      <div class="cab">Atletas · resumen de la semana</div>
       <div id="lista"></div>
     </div>
 
@@ -239,6 +254,7 @@ h3{margin:12px 0 6px;font-size:15px}
     <section class="secc" data-sec="ficha">
     <div id="ficha" class="card oculto">
       <div class="cab" id="ficha-nombre"></div>
+      <div id="ficha-objetivo" class="muted" style="margin:6px 0"></div>
       <nav class="subs">
         <button class="subt on" data-sub="calendario">Calendario</button>
         <button class="subt" data-sub="tests">Tests y plan</button>
@@ -298,6 +314,9 @@ h3{margin:12px 0 6px;font-size:15px}
       <h3>Métricas</h3>
       <div id="metricas-t" class="muted" style="white-space:pre-line"></div>
 
+      <h3>Condición, fatiga y forma</h3>
+      <div id="forma-t"></div>
+
 </div>
 <div class="subsec" data-sub="mensajes">
       <h3>Acceso y mensajes</h3>
@@ -324,6 +343,7 @@ h3{margin:12px 0 6px;font-size:15px}
       <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
       <button id="btn-asignar">Añadir al calendario</button>
       <div class="leyenda" data-leyenda></div>
+      <div class="leyenda"><span class="leg"><i class="punto" style="background:#2e7d32"></i>Hecha según el plan</span><span class="leg"><i class="punto" style="background:#f9a825"></i>Parcial o de más</span><span class="leg"><i class="punto" style="background:#ef6c00"></i>Muy distinta</span><span class="leg"><i class="punto" style="background:#c62828"></i>Sin hacer</span></div>
       <div id="semana"></div>
 </div>
     </div>
@@ -348,6 +368,7 @@ h3{margin:12px 0 6px;font-size:15px}
         <select id="plan-atleta"></select>
         <input id="plan-fecha" type="date">
       </div>
+      <button id="btn-plan-objetivo" class="sec" type="button">Ajustar la fecha para terminar en el objetivo del atleta</button>
       <button id="btn-plan-aplicar">Aplicar plan al calendario</button>
     </div>
 
@@ -372,6 +393,10 @@ h3{margin:12px 0 6px;font-size:15px}
         <input id="s-carga" type="number" min="0" placeholder="Carga">
       </div>
       <textarea id="s-descripcion" rows="3" placeholder="Descripción"></textarea>
+      <h3>Pasos de la sesión (opcional)</h3>
+      <p class="muted">Cada paso con su zona. El atleta verá sus propios ritmos y pulsaciones. Si todos los pasos van en minutos, la duración se calcula sola.</p>
+      <div id="s-pasos"></div>
+      <button id="btn-paso" class="sec" type="button">+ Añadir paso</button>
       <div class="acciones">
         <button id="btn-sesion">Guardar sesión</button>
         <button id="btn-cancelar-sesion" class="sec oculto">Cancelar edición</button>
@@ -401,6 +426,7 @@ h3{margin:12px 0 6px;font-size:15px}
       <button class="tabt" data-ta="msg">Mensajes</button>
     </nav>
     <div id="resumen-atleta" class="card"></div>
+    <div id="objetivo-a" class="card oculto" style="font-weight:600"></div>
 
     <section class="seca on" data-sa="cal">
       <div class="card">
@@ -412,6 +438,7 @@ h3{margin:12px 0 6px;font-size:15px}
           <button id="btn-vista-a" class="sec">Ver mes</button>
         </div>
         <div class="leyenda" data-leyenda></div>
+      <div class="leyenda"><span class="leg"><i class="punto" style="background:#2e7d32"></i>Hecha según el plan</span><span class="leg"><i class="punto" style="background:#f9a825"></i>Parcial o de más</span><span class="leg"><i class="punto" style="background:#ef6c00"></i>Muy distinta</span><span class="leg"><i class="punto" style="background:#c62828"></i>Sin hacer</span></div>
         <div id="semana-a"></div>
       </div>
 
@@ -419,6 +446,8 @@ h3{margin:12px 0 6px;font-size:15px}
         <div class="cab" id="det-titulo"></div>
         <div class="muted" id="det-meta"></div>
         <p id="det-texto" style="white-space:pre-line;font-size:15px;line-height:1.5"></p>
+        <div id="det-pasos"></div>
+        <div id="det-comentario" class="nota-entrenador oculto"></div>
         <label>Estado
           <select id="det-estado">
             <option value="pendiente">pendiente</option>
@@ -432,6 +461,9 @@ h3{margin:12px 0 6px;font-size:15px}
             <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
             <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
           </select>
+        </label>
+        <label>Minutos reales
+          <input id="det-min" type="number" min="0" inputmode="numeric" placeholder="ej. 45">
         </label>
         <label>Km reales
           <input id="det-km" type="text" inputmode="decimal" placeholder="ej. 8.5">
@@ -463,6 +495,8 @@ h3{margin:12px 0 6px;font-size:15px}
         <div class="cab">Carga de entrenamiento</div>
         <p class="muted">La carga de cada sesión es la duración × el esfuerzo que marcas. Rellena el esfuerzo y los km al terminar cada sesión.</p>
         <div id="carga-a"></div>
+        <h3>Condición, fatiga y forma</h3>
+        <div id="forma-a"></div>
       </div>
     </section>
 
@@ -473,10 +507,10 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
       <div class="card">
         <div class="cab">Registrar hoy</div>
-        <p class="muted">Pulsaciones en reposo, HRV, peso, sueño y estrés. Un registro por día.</p>
+        <p class="muted">Pulsaciones en reposo, VFC, peso, sueño y estrés. Un registro por día.</p>
         <input id="m-fecha" type="date">
         <input id="m-fc" type="text" inputmode="decimal" placeholder="Pulsaciones en reposo (ppm)">
-        <input id="m-hrv" type="text" inputmode="decimal" placeholder="HRV (ms)">
+        <input id="m-hrv" type="text" inputmode="decimal" placeholder="VFC (ms)">
         <input id="m-peso" type="text" inputmode="decimal" placeholder="Peso (kg)">
         <input id="m-sueno" type="text" inputmode="decimal" placeholder="Horas de sueño">
         <input id="m-estres" type="text" inputmode="decimal" placeholder="Estrés (1-10)">
@@ -490,7 +524,7 @@ h3{margin:12px 0 6px;font-size:15px}
         <div class="cab">Mi perfil</div>
         <p class="muted">Estos datos sirven para ajustar tu entrenamiento a tu nivel. Deja en blanco lo que no sepas.</p>
         <div id="perfil-form"></div>
-        <label class="ver"><input type="checkbox" id="pf-consentimiento"> Acepto que mis datos de salud (pulso, HRV, lesiones) se usen para planificar mi entrenamiento</label>
+        <label class="ver"><input type="checkbox" id="pf-consentimiento"> Acepto que mis datos de salud (pulso, VFC, lesiones) se usen para planificar mi entrenamiento</label>
         <div class="row">
           <button id="btn-perfil-guardar" class="gold">Guardar perfil</button>
           <span id="perfil-estado" class="muted"></span>
@@ -648,7 +682,7 @@ const GRUPOS_PERFIL = [
     { k: 'fc_reposo', l: 'Pulsaciones en reposo (ppm)', t: 'num' },
     { k: 'fc_max', l: 'Pulsaciones máximas (ppm)', t: 'num' },
     { k: 'fc_umbral', l: 'Pulsaciones en umbral (ppm)', t: 'num' },
-    { k: 'hrv_media', l: 'HRV media (ms)', t: 'num' },
+    { k: 'hrv_media', l: 'VFC media (ms)', t: 'num' },
     { k: 'vo2max', l: 'VO2max estimado', t: 'num' },
     { k: 'ritmo_facil', l: 'Ritmo cómodo (min/km)', t: 'text' },
     { k: 'ritmo_umbral', l: 'Ritmo umbral (min/km)', t: 'text' } ] },
@@ -742,6 +776,7 @@ async function cargarPerfilResumen(atletaId) {
     .eq('atleta_id', atletaId).maybeSingle();
   const box = $('perfil-resumen');
   box.innerHTML = '';
+  $('ficha-objetivo').textContent = textoObjetivo(data);
   if (error) { box.textContent = error.message; return; }
   if (!data) { box.textContent = 'El atleta aún no ha rellenado su perfil.'; return; }
   GRUPOS_PERFIL.forEach(g => {
@@ -793,7 +828,7 @@ const CAMPOS_METRICAS = {
 };
 const ETIQUETAS_METRICAS = {
   peso_kg: 'Peso', altura_cm: 'Altura', anos_corriendo: 'Años corriendo', km_semana: 'Km/semana',
-  pulso_reposo: 'Pulso reposo', hrv_ms: 'HRV', fc_max: 'FC máx', horas_sueno: 'Sueño',
+  pulso_reposo: 'Pulso reposo', hrv_ms: 'VFC', fc_max: 'FC máx', horas_sueno: 'Sueño',
   dias_disponibles: 'Días/semana', nivel_percibido: 'Nivel percibido', objetivo: 'Objetivo',
   lesiones: 'Lesiones', comentarios: 'Comentarios'
 };
@@ -884,8 +919,289 @@ function mostrarTabA(id) {
 }
 document.querySelectorAll('#tabs-a .tabt').forEach(b => b.onclick = () => mostrarTabA(b.dataset.ta));
 
+/* ---------- PASOS DE SESIÓN ---------- */
+let pasosForm = [];
+let sesionTeniaPasos = false;
+
+function duracionPasos(pasos) {
+  if (!pasos || !pasos.length) return null;
+  let total = 0;
+  for (const ps of pasos) {
+    if (ps.unidad !== 'min' || !ps.cantidad) return null;
+    const r = ps.rep || 1;
+    total += r * ps.cantidad + (r - 1) * (ps.rec || 0);
+  }
+  return Math.round(total);
+}
+function pasosLimpios() {
+  const out = pasosForm.filter(ps => ps.cantidad).map(ps => ({
+    nombre: (ps.nombre || '').trim(), rep: ps.rep || 1, cantidad: ps.cantidad,
+    unidad: ps.unidad || 'min', zona: ps.zona || null, rec: ps.rec || null
+  }));
+  return out.length ? out : null;
+}
+function pintarPasosForm() {
+  const box = $('s-pasos');
+  box.innerHTML = '';
+  pasosForm.forEach((ps, i) => {
+    const row = document.createElement('div');
+    row.className = 'paso-row';
+    const alCambiar = () => { const t = duracionPasos(pasosForm); if (t) $('s-duracion').value = t; };
+    const campo = (k, tipo, ph) => {
+      const el = document.createElement('input');
+      el.type = tipo;
+      el.placeholder = ph;
+      el.title = ph;
+      if (tipo === 'number') { el.min = 0; el.step = 'any'; }
+      el.value = ps[k] ?? '';
+      el.oninput = () => { ps[k] = tipo === 'number' ? (el.value === '' ? null : Number(el.value)) : el.value; alCambiar(); };
+      return el;
+    };
+    const lista = (k, opciones) => {
+      const el = document.createElement('select');
+      opciones.forEach(([v, t]) => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = t;
+        if (String(ps[k] ?? '') === String(v)) o.selected = true;
+        el.appendChild(o);
+      });
+      el.onchange = () => { ps[k] = k === 'zona' ? (el.value ? Number(el.value) : null) : el.value; alCambiar(); };
+      return el;
+    };
+    const quitar = document.createElement('button');
+    quitar.type = 'button';
+    quitar.className = 'danger';
+    quitar.textContent = '✕';
+    quitar.onclick = () => { pasosForm.splice(i, 1); pintarPasosForm(); };
+    row.append(
+      campo('nombre', 'text', 'Paso (ej. Calentamiento)'),
+      campo('rep', 'number', 'Repeticiones'),
+      campo('cantidad', 'number', 'Cantidad'),
+      lista('unidad', [['min', 'min'], ['m', 'm'], ['km', 'km']]),
+      lista('zona', [['', 'Zona'], [1, 'Z1'], [2, 'Z2'], [3, 'Z3'], [4, 'Z4'], [5, 'Z5']]),
+      campo('rec', 'number', 'Recup. (min)'),
+      quitar
+    );
+    box.appendChild(row);
+  });
+}
+$('btn-paso').onclick = () => {
+  pasosForm.push({ nombre: '', rep: 1, cantidad: null, unidad: 'min', zona: null, rec: null });
+  pintarPasosForm();
+};
+
+async function zonasDe(atletaId) {
+  const { data } = await sb.from('zonas').select('*').eq('atleta_id', atletaId);
+  return data || [];
+}
+function rangoZona(n, zonas) {
+  const partes = [];
+  const r = zonas.find(z => z.tipo === 'ritmo' && Number(z.zona) === Number(n));
+  const f = zonas.find(z => z.tipo === 'fc' && Number(z.zona) === Number(n));
+  if (r) partes.push(`${formatoTiempo(r.minimo)}–${formatoTiempo(r.maximo)} /km`);
+  if (f) partes.push(`${f.minimo}–${f.maximo} ppm`);
+  return partes.length ? ` (${partes.join(' · ')})` : '';
+}
+function textoPaso(ps, zonas) {
+  const r = ps.rep || 1;
+  let t = (ps.nombre ? ps.nombre + ': ' : '') + (r > 1 ? `${r} × ` : '') + `${ps.cantidad} ${ps.unidad || 'min'}`;
+  if (ps.zona) t += ` en Z${ps.zona}` + rangoZona(ps.zona, zonas || []);
+  if (ps.rec && r > 1) t += ` · recuperación ${ps.rec} min`;
+  return t;
+}
+function pintarPasos(el, pasos, zonas) {
+  el.innerHTML = '';
+  if (!Array.isArray(pasos) || !pasos.length) return;
+  const ol = document.createElement('ol');
+  ol.className = 'pasos-lista';
+  pasos.forEach(ps => {
+    const li = document.createElement('li');
+    li.textContent = textoPaso(ps, zonas);
+    ol.appendChild(li);
+  });
+  el.appendChild(ol);
+}
+
+/* ---------- DETALLE DE SESIÓN (ENTRENADOR) ---------- */
+async function abrirDetalleSesion(p) {
+  const partes = (p.descripcion || p.tipo || 'Sesión').split(' — ');
+  const c = cumplimiento(p);
+  $('ms-titulo').textContent = partes[0];
+  $('ms-meta').textContent = `${p.fecha} · ${p.tipo || ''} · plan ${p.duracion_min ?? '-'} min` + (c ? ` · ${c.texto}` : '');
+  $('ms-texto').textContent = partes.slice(1).join(' — ');
+  $('ms-atleta').textContent = `Estado: ${p.estado || 'pendiente'} · ${p.duracion_real_min ?? '-'} min reales · ${p.km_reales ?? '-'} km · esfuerzo ${p.rpe ?? '-'}` +
+    (p.notas_atleta ? `\nNotas: ${p.notas_atleta}` : '\nSin notas.');
+  $('ms-comentario').value = p.comentario_entrenador || '';
+  $('ms-pasos').innerHTML = '';
+  $('modal-sesion').classList.remove('oculto');
+  $('ms-guardar').onclick = async () => {
+    const { error } = await sb.from('sesiones_planificadas')
+      .update({ comentario_entrenador: $('ms-comentario').value.trim() || null }).eq('id', p.id);
+    if (error) return alert(error.message);
+    $('modal-sesion').classList.add('oculto');
+    cargarSemana();
+  };
+  pintarPasos($('ms-pasos'), p.pasos, await zonasDe(p.atleta_id));
+}
+$('ms-cerrar').onclick = () => $('modal-sesion').classList.add('oculto');
+
+/* ---------- CONDICIÓN, FATIGA Y FORMA ---------- */
+function dibujarForma(box, sesiones) {
+  box.innerHTML = '';
+  const hoy = new Date();
+  const hoyIso = iso(hoy);
+  const porDia = {};
+  (sesiones || []).forEach(p => { if (p.fecha <= hoyIso) porDia[p.fecha] = (porDia[p.fecha] || 0) + cargaSesion(p); });
+  let ctl = 0, atl = 0;
+  const pts = [];
+  for (let k = 83; k >= 0; k--) {
+    const c = porDia[iso(sumarDias(hoy, -k))] || 0;
+    ctl += (c - ctl) / 42;
+    atl += (c - atl) / 7;
+    pts.push({ ctl, atl, tsb: ctl - atl });
+  }
+  if (!pts.some(x => x.atl > 0)) {
+    const m = document.createElement('p');
+    m.className = 'muted';
+    m.textContent = 'Todavía no hay sesiones con el esfuerzo registrado. El gráfico aparecerá cuando las haya.';
+    box.appendChild(m);
+    return;
+  }
+  const W = 600, H = 200, P = 6;
+  const max = Math.max(...pts.map(x => Math.max(x.ctl, x.atl)), 1);
+  const min = Math.min(0, ...pts.map(x => x.tsb));
+  const X = i => P + (i / (pts.length - 1)) * (W - 2 * P);
+  const Y = v => P + (1 - (v - min) / (max - min)) * (H - 2 * P);
+  const linea = (k, color, ancho) => `<polyline fill="none" stroke="${color}" stroke-width="${ancho}" points="${pts.map((x, i) => X(i).toFixed(1) + ',' + Y(x[k]).toFixed(1)).join(' ')}"/>`;
+  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:rgba(255,255,255,.6);border-radius:8px" role="img" aria-label="Condición, fatiga y forma de las últimas 12 semanas">
+    <line x1="${P}" x2="${W - P}" y1="${Y(0)}" y2="${Y(0)}" stroke="#888" stroke-dasharray="4 4"/>
+    ${linea('tsb', '#e0a800', 2)}${linea('atl', '#d32f2f', 2)}${linea('ctl', '#1976d2', 3)}</svg>`;
+  const u = pts[pts.length - 1];
+  const rel = u.ctl > 0 ? u.tsb / u.ctl : 0;
+  const lectura = rel < -0.3 ? 'Fatiga acumulada alta: conviene descargar.'
+    : rel < -0.1 ? 'En fase de carga: está asimilando trabajo.'
+    : rel <= 0.1 ? 'Equilibrado.'
+    : 'Fresco: listo para competir o para volver a cargar.';
+  box.innerHTML = svg +
+    `<div class="forma-leyenda"><span><i style="background:#1976d2"></i>Condición (42 días): ${Math.round(u.ctl)}</span>` +
+    `<span><i style="background:#d32f2f"></i>Fatiga (7 días): ${Math.round(u.atl)}</span>` +
+    `<span><i style="background:#e0a800"></i>Forma: ${Math.round(u.tsb)}</span></div>`;
+  const pl = document.createElement('p');
+  pl.textContent = lectura;
+  box.appendChild(pl);
+}
+async function cargarFormaTrainer(atletaId) {
+  const desde = iso(sumarDias(new Date(), -84));
+  const { data } = await sb.from('sesiones_planificadas').select('*').eq('atleta_id', atletaId).gte('fecha', desde);
+  if (atletaActual && atletaActual.id === atletaId) dibujarForma($('forma-t'), data || []);
+}
+
+/* ---------- OBJETIVO ---------- */
+function semanasAObjetivo(perfil) {
+  if (!perfil || !perfil.fecha_objetivo) return null;
+  const dias = Math.round((new Date(String(perfil.fecha_objetivo).slice(0, 10) + 'T00:00:00') - new Date(iso(new Date()) + 'T00:00:00')) / 864e5);
+  return { dias, semanas: Math.floor(dias / 7) };
+}
+function textoObjetivo(perfil) {
+  const f = semanasAObjetivo(perfil);
+  if (!f) return '';
+  const nombre = perfil.objetivo || 'carrera';
+  const fecha = String(perfil.fecha_objetivo).slice(0, 10);
+  if (f.dias < 0) return `Objetivo: ${nombre} · fue el ${fecha}`;
+  const fase = f.semanas > 12 ? 'base' : f.semanas >= 4 ? 'específica' : f.semanas >= 1 ? 'puesta a punto' : 'semana de carrera';
+  return `Objetivo: ${nombre} · ${fecha} · faltan ${f.semanas} semanas (${f.dias} días) · fase ${fase}`;
+}
+$('btn-plan-objetivo').onclick = async () => {
+  const atletaId = $('plan-atleta').value;
+  if (!atletaId) return alert('Elige un atleta.');
+  const { data } = await sb.from('perfil_atleta').select('objetivo, fecha_objetivo').eq('atleta_id', atletaId).maybeSingle();
+  if (!data || !data.fecha_objetivo) return alert('Este atleta no tiene fecha objetivo en su perfil.');
+  const carrera = new Date(String(data.fecha_objetivo).slice(0, 10) + 'T00:00:00');
+  const inicio = sumarDias(lunesDe(carrera), -77);
+  $('plan-fecha').value = iso(inicio);
+  alert(`El plan de 12 semanas empezará el ${iso(inicio)} y su última semana será la del objetivo (${String(data.fecha_objetivo).slice(0, 10)}). Revisa la fecha y pulsa «Aplicar plan al calendario».`);
+};
+
+/* Cumplimiento, como en TrainingPeaks: verde 80-120 % de lo planificado,
+   amarillo 50-79 % o 121-150 %, naranja fuera de eso, rojo sin hacer. */
+function cumplimiento(p) {
+  if (p.estado === 'omitida') return { color: '#c62828', texto: 'omitida' };
+  if (p.estado === 'hecha') {
+    if (p.duracion_real_min && p.duracion_min) {
+      const r = p.duracion_real_min / p.duracion_min;
+      if (r >= 0.8 && r <= 1.2) return { color: '#2e7d32', texto: 'hecha según el plan' };
+      if (r >= 0.5 && r <= 1.5) return { color: '#f9a825', texto: 'parcial o de más' };
+      return { color: '#ef6c00', texto: 'muy distinta de lo planificado' };
+    }
+    return { color: '#2e7d32', texto: 'hecha' };
+  }
+  if (p.fecha < iso(new Date())) return { color: '#c62828', texto: 'sin hacer' };
+  return null;
+}
+function ponerPunto(el, p) {
+  const c = cumplimiento(p);
+  if (!c) return;
+  const i = document.createElement('i');
+  i.className = 'punto';
+  i.style.background = c.color;
+  i.title = c.texto;
+  el.prepend(i);
+}
+
+/* Panel del entrenador: resumen de la semana de cada atleta */
+async function cargarPanelAtletas(atletas) {
+  const hoy = iso(new Date());
+  const lunes = lunesDe(new Date());
+  const desde = iso(sumarDias(lunes, -21));
+  const hasta = iso(sumarDias(lunes, 6));
+  const hace7 = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [rs, rm, rp] = await Promise.all([
+    sb.from('sesiones_planificadas').select('*').gte('fecha', desde).lte('fecha', hasta),
+    sb.from('mensajes').select('atleta_id, autor_id, created_at').gte('created_at', hace7),
+    sb.from('perfil_atleta').select('atleta_id, objetivo, fecha_objetivo')
+  ]);
+  const perfiles = rp.data || [];
+  if (rs.error) return;
+  const sesiones = rs.data || [];
+  const mensajes = rm.data || [];
+  const lunesIso = iso(lunes);
+  atletas.forEach(a => {
+    const box = document.querySelector(`[data-chips="${a.id}"]`);
+    if (!box) return;
+    box.innerHTML = '';
+    const chip = (txt, cls) => {
+      const c = document.createElement('span');
+      c.className = 'chip' + (cls ? ' ' + cls : '');
+      c.textContent = txt;
+      box.appendChild(c);
+    };
+    if (!a.entrenador_id) chip('sin asignar', 'aviso');
+    const mias = sesiones.filter(p => p.atleta_id === a.id);
+    const semana = mias.filter(p => p.fecha >= lunesIso);
+    const hechas = semana.filter(p => p.estado === 'hecha').length;
+    if (!semana.length) chip('sin sesiones esta semana', 'aviso');
+    else chip(`esta semana ${hechas}/${semana.length} hechas`, hechas === semana.length ? 'ok' : '');
+    const hace7dias = iso(sumarDias(new Date(), -7));
+    const falladas = mias.filter(p => p.fecha >= hace7dias && p.fecha < hoy && p.estado !== 'hecha').length;
+    if (falladas) chip(`${falladas} sin hacer en 7 días`, falladas >= 2 ? 'mal' : 'aviso');
+    const cargaDe = (ini, fin) => mias.filter(p => p.fecha >= ini && p.fecha <= fin).reduce((t, p) => t + cargaSesion(p), 0);
+    const cargaSem = cargaDe(lunesIso, hasta);
+    const previas = [1, 2, 3].map(k => cargaDe(iso(sumarDias(lunes, -7 * k)), iso(sumarDias(lunes, -7 * k + 6))));
+    const media = previas.reduce((t, x) => t + x, 0) / 3;
+    if (cargaSem) chip(`carga ${Math.round(cargaSem)}`, media > 0 && cargaSem > media * 1.5 ? 'mal' : '');
+    if (media > 0 && cargaSem > media * 1.5) chip('carga alta frente a sus 3 semanas previas', 'mal');
+    const ultima = mias.filter(p => p.estado === 'hecha').map(p => p.fecha).sort().pop();
+    if (ultima) chip(`última hecha ${ultima}`);
+    const suyos = mensajes.filter(m => m.atleta_id === a.id && m.autor_id !== miUserId)
+      .map(m => m.created_at).sort().pop();
+    if (suyos) chip(`te escribió el ${suyos.slice(0, 10)}`, 'info');
+    const fo = semanasAObjetivo(perfiles.find(x => x.atleta_id === a.id));
+    if (fo && fo.dias >= 0) chip(`objetivo en ${fo.semanas} sem`, fo.semanas <= 3 ? 'aviso' : '');
+  });
+}
+
 function cargaSesion(p) {
-  return p.rpe ? (Number(p.duracion_min) || 0) * p.rpe : 0;
+  return p.rpe ? (Number(p.duracion_real_min || p.duracion_min) || 0) * p.rpe : 0;
 }
 function fechaCorta(d) {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -915,6 +1231,9 @@ async function cargarTodoAtleta() {
 }
 
 function renderResumen() {
+  const txtObj = textoObjetivo(datosAtleta.perfil);
+  $('objetivo-a').textContent = txtObj;
+  $('objetivo-a').classList.toggle('oculto', !txtObj);
   const hoy = new Date();
   const hoyIso = iso(hoy);
   const ini = iso(lunesDe(hoy));
@@ -1030,6 +1349,7 @@ function renderCarga() {
     row.append(lab, fondo, val);
     box.appendChild(row);
   });
+  dibujarForma($('forma-a'), datosAtleta.sesiones);
 }
 
 function renderProgreso() {
@@ -1080,14 +1400,14 @@ function renderProgreso() {
     if (a === null || b === null) return;
     const t = document.createElement('div');
     t.className = 'muted';
-    const nombre = k === 'fc_reposo' ? 'Pulsaciones en reposo' : 'HRV';
+    const nombre = k === 'fc_reposo' ? 'Pulsaciones en reposo' : 'VFC';
     t.textContent = `${nombre}: media de los últimos 7 días ${a.toFixed(0)} frente a ${b.toFixed(0)} de los 7 anteriores`;
     mb.appendChild(t);
   });
   met.slice(0, 30).forEach(m => {
     const d = document.createElement('div');
     d.className = 'zona';
-    d.textContent = `${m.fecha} · FC reposo ${m.fc_reposo ?? '-'} · HRV ${m.hrv ?? '-'} · Peso ${m.peso_kg ?? '-'} · Sueño ${m.sueno_h ?? '-'} h · Estrés ${m.estres ?? '-'}`;
+    d.textContent = `${m.fecha} · FC reposo ${m.fc_reposo ?? '-'} · VFC ${m.hrv ?? '-'} · Peso ${m.peso_kg ?? '-'} · Sueño ${m.sueno_h ?? '-'} h · Estrés ${m.estres ?? '-'}`;
     mb.appendChild(d);
   });
 }
@@ -1123,6 +1443,11 @@ function mostrarDetalle(p) {
   $('det-estado').value = p.estado || 'pendiente';
   $('det-rpe').value = p.rpe ?? '';
   $('det-km').value = p.km_reales ?? '';
+  $('det-min').value = p.duracion_real_min ?? '';
+  $('det-pasos').innerHTML = '';
+  if (Array.isArray(p.pasos) && p.pasos.length && miAtleta) zonasDe(miAtleta.id).then(z => pintarPasos($('det-pasos'), p.pasos, z));
+  $('det-comentario').classList.toggle('oculto', !p.comentario_entrenador);
+  $('det-comentario').textContent = p.comentario_entrenador ? 'Comentario de tu entrenador:\n' + p.comentario_entrenador : '';
   $('det-notas').value = p.notas_atleta || '';
   $('det-guardar').onclick = async () => {
     const rpe = $('det-rpe').value ? Number($('det-rpe').value) : null;
@@ -1133,6 +1458,7 @@ function mostrarDetalle(p) {
       estado: $('det-estado').value,
       rpe,
       km_reales: km,
+      duracion_real_min: $('det-min').value ? Number($('det-min').value) : null,
       notas_atleta: $('det-notas').value.trim() || null
     }).eq('id', p.id);
     if (error) return alert(error.message);
@@ -1321,11 +1647,19 @@ async function cargarAtletas() {
     op.textContent = a.nombre;
     selPlan.appendChild(op);
     const div = document.createElement('div');
-    div.className = 'atleta clickable';
-    div.textContent = a.nombre;
+    div.className = 'fila-atleta';
+    const nom = document.createElement('div');
+    nom.className = 'nom';
+    nom.textContent = a.nombre + (a.nivel ? ` · ${a.nivel}` : '');
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    chips.dataset.chips = a.id;
+    div.append(nom, chips);
     div.onclick = () => abrirFicha(a);
     $('lista').appendChild(div);
   });
+  if (!data.length) $('lista').innerHTML = '<p class="muted">Todavía no hay atletas.</p>';
+  cargarPanelAtletas(data);
 }
 
 function abrirFicha(atleta) {
@@ -1345,6 +1679,7 @@ function abrirFicha(atleta) {
   activarChat('chat-t', atleta.id, miUserId);
   cargarPerfilResumen(atleta.id);
   cargarMetricasTrainer(atleta.id);
+  cargarFormaTrainer(atleta.id);
   cargarZonas();
   cargarTests();
   cargarSemana();
@@ -1513,6 +1848,9 @@ function editarSesion(s) {
   $('s-duracion').value = s.duracion_min ?? '';
   $('s-carga').value = s.carga ?? '';
   $('s-descripcion').value = s.descripcion || '';
+  pasosForm = Array.isArray(s.pasos) ? s.pasos.map(x => ({ ...x })) : [];
+  sesionTeniaPasos = pasosForm.length > 0;
+  pintarPasosForm();
   $('btn-sesion').textContent = 'Actualizar sesión';
   $('btn-cancelar-sesion').classList.remove('oculto');
   $('s-nombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1526,6 +1864,9 @@ function limpiarFormularioSesion() {
   $('s-duracion').value = '';
   $('s-carga').value = '';
   $('s-descripcion').value = '';
+  pasosForm = [];
+  sesionTeniaPasos = false;
+  pintarPasosForm();
   $('btn-sesion').textContent = 'Guardar sesión';
   $('btn-cancelar-sesion').classList.add('oculto');
 }
@@ -1545,6 +1886,8 @@ $('btn-sesion').onclick = async () => {
     carga: $('s-carga').value ? parseInt($('s-carga').value) : null,
     descripcion: $('s-descripcion').value || null
   };
+  const pl = pasosLimpios();
+  if (pl || sesionTeniaPasos) datos.pasos = pl;
 
   let error;
   if (sesionEditandoId) {
@@ -1584,7 +1927,8 @@ $('btn-asignar').onclick = async () => {
     fecha,
     tipo: base.tipo,
     descripcion: $('cal-desc').value || base.nombre + (base.descripcion ? ' — ' + base.descripcion : ''),
-    duracion_min: base.duracion_min
+    duracion_min: base.duracion_min,
+    ...(base.pasos ? { pasos: base.pasos } : {})
   });
   if (error) return alert(error.message);
 
@@ -1659,7 +2003,8 @@ async function ponerEnDia(x) {
     fecha: iso(diaSeleccionado),
     tipo: x.tipo,
     descripcion: x.nombre + (x.descripcion ? ' — ' + x.descripcion : ''),
-    duracion_min: x.duracion_min
+    duracion_min: x.duracion_min,
+    ...(x.pasos ? { pasos: x.pasos } : {})
   });
   if (error) return alert(error.message);
   cerrarPickerDia();
@@ -1711,7 +2056,8 @@ async function ejecutarMover(copiar) {
   if (copiar) {
     res = await sb.from('sesiones_planificadas').insert({
       atleta_id: p.atleta_id, bloque_id: p.bloque_id ?? null, fecha,
-      tipo: p.tipo, descripcion: p.descripcion, duracion_min: p.duracion_min, estado: 'pendiente'
+      tipo: p.tipo, descripcion: p.descripcion, duracion_min: p.duracion_min, estado: 'pendiente',
+      ...(p.pasos ? { pasos: p.pasos } : {})
     });
   } else {
     res = await sb.from('sesiones_planificadas').update({ fecha }).eq('id', p.id);
@@ -1793,6 +2139,7 @@ async function cargarMes() {
       t.style.borderLeftColor = (typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999';
       t.style.background = ((typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999') + '26';
       t.textContent = (p.descripcion || p.tipo || '').split(' — ')[0];
+      ponerPunto(t, p);
       t.draggable = true;
       t.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
       t.ondragend = () => { arrastrando = null; };
@@ -1893,10 +2240,11 @@ function tarjetaSesion(p) {
   const tit = document.createElement('div');
   tit.className = 'tit';
   tit.textContent = p.descripcion || p.tipo || 'Sesión';
+  ponerPunto(tit, p);
 
   const det = document.createElement('div');
   det.className = 'det';
-  det.textContent = `${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
+  det.textContent = `${p.tipo || ''} · ${p.duracion_min ?? '-'} min` + (p.duracion_real_min ? ` · hechos ${p.duracion_real_min}` : '');
   const mv = document.createElement('button');
   mv.className = 'mover-btn';
   mv.textContent = '↔ mover';
@@ -1910,6 +2258,12 @@ function tarjetaSesion(p) {
   }
 
   card.onclick = (e) => { if (!seleccion) e.stopPropagation(); };
+  const ver = document.createElement('button');
+  ver.className = 'mover-btn';
+  ver.textContent = p.notas_atleta ? 'detalle ●' : 'detalle';
+  ver.title = p.notas_atleta ? 'El atleta ha dejado notas' : 'Ver pasos, datos del atleta y comentar';
+  ver.onclick = (e) => { e.stopPropagation(); abrirDetalleSesion(p); };
+  det.appendChild(ver);
   const acc = document.createElement('div');
   acc.className = 'acc';
 
@@ -2145,6 +2499,22 @@ $('btn-plan-aplicar').onclick = async () => {
 
 mostrarSegunSesion();
 </script>
+<div id="modal-sesion" class="oculto modal">
+  <div class="modal-caja" style="max-width:520px;max-height:90vh;overflow:auto">
+    <div class="cab" id="ms-titulo"></div>
+    <div class="muted" id="ms-meta"></div>
+    <p id="ms-texto" style="white-space:pre-line;font-size:14px"></p>
+    <div id="ms-pasos"></div>
+    <h3>Lo que ha registrado el atleta</h3>
+    <div id="ms-atleta" style="white-space:pre-line;font-size:14px"></div>
+    <h3>Tu comentario</h3>
+    <textarea id="ms-comentario" rows="3" placeholder="El atleta lo verá al abrir la sesión"></textarea>
+    <div class="acciones">
+      <button id="ms-guardar">Guardar comentario</button>
+      <button id="ms-cerrar" class="sec">Cerrar</button>
+    </div>
+  </div>
+</div>
 <div id="banner-mover" class="oculto banner-mover">
   <span id="banner-texto"></span>
   <button id="banner-cancelar" class="sec">Cancelar</button>
