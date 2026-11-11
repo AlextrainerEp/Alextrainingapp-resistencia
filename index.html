@@ -451,15 +451,21 @@ html body:not(.cli) .login a{color:#fff;text-decoration:underline;font-weight:60
 html body:not(.cli) .fondo{background:none;position:static;height:0;padding:0;margin:0;overflow:visible}
 html body:not(.cli) .frase{position:fixed;left:0;right:0;top:0;transform:translateY(-100%);margin:0 auto;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.9);z-index:1}
 html body:not(.cli) .frase .autor{color:#e0b43a;text-shadow:0 1px 4px rgba(0,0,0,.9)}
-html body:not(.cli) .login.card{margin-top:40px}
 html body:not(.cli) .login .big{filter:grayscale(1) brightness(.9)}
 
 /* ---- Móvil: foto a pantalla completa, formulario más abajo para no tapar la frase, textos con sombra ---- */
 @media (max-width:600px){
   html body:not(.cli)::after{background-size:cover}
-  html body:not(.cli) .login.card{margin-top:52vh}
 }
 html body:not(.cli) .login p,html body:not(.cli) .login a,html body:not(.cli) .login label,html body:not(.cli) .login h3{text-shadow:0 1px 4px rgba(0,0,0,.9)}
+
+/* ---- Acceso: el cuadro de acceso va fijo debajo del logo central; sin el león para que quepa ---- */
+html body:not(.cli) .login.card{position:fixed;left:0;right:0;margin:0 auto;width:calc(100% - 32px);max-width:440px;padding:0;z-index:2}
+html body:not(.cli) .login .big{display:none}
+html body:not(.cli) .login .tagline{display:none}
+html body:not(.cli) .login input{margin:0 0 8px}
+html body:not(.cli) .login button{margin-top:4px}
+html body:not(.cli) .login p{margin:8px 0 0}
 </style>
 </head>
 <body>
@@ -2377,20 +2383,21 @@ document.addEventListener("click",ev=>{
 init().catch(()=>pantallaLogin());
 </script>
 <script>
-/* Coloca la frase dos líneas por encima del pico, con la foto entera centrada (contain) */
-(function(){
-  function colocarFrase(){
-    var f=document.querySelector('body:not(.cli) .frase');
-    if(!f) return;
-    var W=window.innerWidth, H=window.innerHeight;
-    var s=W<=600?Math.max(W/1672,H/941):1.2*W/1672; /* en móvil la foto cubre toda la pantalla; en escritorio al 120 % del ancho */
-    var yPico=(H-941*s)/2+255*s;
-    f.style.top=(yPico-40)+'px';
-  }
-  window.addEventListener('resize',colocarFrase);
-  window.addEventListener('load',colocarFrase);
-  colocarFrase();
-})();
+/* Escala de la foto según el tamaño de pantalla (igual que en el CSS) */
+function escalaFoto(W,H){ return W<=600 ? Math.max(W/1672,H/941) : 1.2*W/1672; }
+function colocarAcceso(){
+  var W=window.innerWidth, H=window.innerHeight, s=escalaFoto(W,H);
+  var yTop=(H-941*s)/2;                 /* margen superior de la foto */
+  var yPico=yTop+255*s;                 /* pico de la montaña */
+  var yLogoAbajo=yTop+655*s;            /* parte baja del logo central */
+  var f=document.querySelector('body:not(.cli) .frase');
+  if(f) f.style.top=(yPico-40)+'px';
+  var c=document.querySelector('body:not(.cli) .login.card');
+  if(c) c.style.top=(yLogoAbajo+14)+'px';
+}
+window.addEventListener('resize',colocarAcceso);
+window.addEventListener('load',colocarAcceso);
+colocarAcceso();
 </script>
 </body>
 </html>
