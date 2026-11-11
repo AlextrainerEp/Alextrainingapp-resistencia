@@ -212,7 +212,7 @@ h3{margin:12px 0 6px;font-size:15px}
 
 <header id="hdr" class="oculto">
   <img class="logo" src="logo-alex.png" alt="" onerror="this.remove()">
-  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 11-nov-b</span></div>
+  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 11-nov-c</span></div>
   <button id="btn-salir" class="sec">Salir</button>
 </header>
 
@@ -397,7 +397,7 @@ h3{margin:12px 0 6px;font-size:15px}
 
     <div class="card">
       <div class="cab">Subir entrenamiento desde Excel o Google Sheets</div>
-      <p class="muted">Una fila por sesión, con las columnas Fecha, Tipo, Nombre, Descripción y Duración (min). La columna Nivel es opcional. Desde Google Sheets: Archivo → Descargar → Microsoft Excel (.xlsx).</p>
+      <p class="muted">Una fila por sesión, con las columnas Fecha, Tipo, Nombre, Descripción y Duración (min). Cualquier otra columna (Ejercicios, Explicación, Ritmos…) se añade a la explicación de la sesión, y las filas sin fecha se suman a la sesión de arriba. Desde Google Sheets: Archivo → Descargar → Microsoft Excel (.xlsx).</p>
       <div class="row">
         <input id="imp-archivo" type="file" accept=".xlsx,.xls,.csv,.ods">
         <button id="btn-plantilla" class="sec" type="button">Descargar plantilla</button>
@@ -1103,29 +1103,71 @@ function nivelDeCelda(v) {
   if (t.startsWith('avan')) return 'avanzado';
   return null;
 }
+/* Lee todas las hojas del libro. Busca la fila de títulos (la que tiene «Fecha» o «Día»)
+   aunque haya filas de encabezado por encima, y conserva TODAS las columnas. */
+function filasDeLibro(X, libro) {
+  const out = [];
+  libro.SheetNames.forEach(nombreHoja => {
+    const m = X.utils.sheet_to_json(libro.Sheets[nombreHoja], { header: 1, defval: '', raw: true });
+    // Texto tal como se ve en la hoja (para ritmos tipo 4:10, que Excel guarda como hora)
+    const visto = X.utils.sheet_to_json(libro.Sheets[nombreHoja], { header: 1, defval: '', raw: false });
+    if (!m.length) return;
+    let cab = m.slice(0, 20).findIndex(f => f.some(c => /^(fecha|dia|date)\b/.test(sinAcentos(c))));
+    if (cab < 0) cab = m.findIndex(f => f.filter(c => String(c).trim() !== '').length >= 2);
+    if (cab < 0) return;
+    const titulos = m[cab].map(c => String(c ?? '').trim());
+    m.slice(cab + 1).forEach((f, n) => {
+      const pares = [];
+      const fv = visto[cab + 1 + n] || [];
+      f.forEach((v, i) => {
+        if (String(v ?? '').trim() === '') return;
+        const esFecha = /^(fecha|dia|date)\b/.test(sinAcentos(titulos[i]));
+        pares.push([titulos[i] || '', esFecha || fv[i] === undefined || fv[i] === '' ? v : fv[i]]);
+      });
+      if (pares.length) out.push(pares);
+    });
+  });
+  return out;
+}
 function interpretarFilas(filas) {
+  const es = (k, ...nombres) => nombres.some(n => sinAcentos(k).startsWith(n));
+  const hayFechas = filas.some(pares => pares.some(([k, v]) => es(k, 'fecha', 'dia', 'date') && fechaDeCelda(v)));
   const todas = [];
-  filas.forEach(f => {
-    const g = {};
-    Object.keys(f).forEach(k => { g[sinAcentos(k)] = f[k]; });
-    const col = (...nombres) => {
-      const k = Object.keys(g).find(c => nombres.some(n => c.startsWith(n)));
-      return k ? g[k] : '';
-    };
-    const fecha = fechaDeCelda(col('fecha', 'dia', 'date'));
-    const nombre = String(col('nombre', 'sesion', 'entrenamiento', 'titulo') ?? '').trim();
-    const desc = String(col('descripcion', 'detalle', 'notas', 'explicacion') ?? '').trim();
-    const tipoTxt = String(col('tipo') ?? '').trim();
-    const dur = parseInt(col('duracion', 'minutos', 'min', 'tiempo'), 10);
-    if (!nombre && !desc && !tipoTxt) return;
+  filas.forEach(pares => {
+    let fecha = null, nombre = '', tipoTxt = '', dur = null, nivel = null;
+    const principal = [], extra = [];
+    pares.forEach(([k, v]) => {
+      const txt = String(v).trim();
+      if (es(k, 'fecha', 'dia', 'date') && fechaDeCelda(v)) fecha = fechaDeCelda(v);
+      else if (es(k, 'nombre', 'sesion', 'titulo')) nombre = txt;
+      else if (es(k, 'tipo')) tipoTxt = txt;
+      else if (es(k, 'duracion', 'minutos', 'min', 'tiempo') && Number.isFinite(parseInt(txt, 10))) dur = parseInt(txt, 10);
+      else if (es(k, 'nivel') && nivelDeCelda(v)) nivel = nivelDeCelda(v);
+      else if (es(k, 'descripcion', 'entrenamiento', 'detalle')) principal.push(txt);
+      else extra.push((k ? k + ': ' : '') + txt);
+    });
+    const texto = [...principal, ...extra].join('\n');
+    if (!nombre && !tipoTxt && !texto) return;
+    // Fila sin fecha debajo de una sesión con fecha: es la continuación de esa sesión
+    if (hayFechas && !fecha && todas.length && todas[todas.length - 1].fecha) {
+      const ant = todas[todas.length - 1];
+      const linea = [nombre, tipoTxt, texto].filter(Boolean).join(' · ');
+      ant.desc = ant.desc ? ant.desc + '\n' + linea : linea;
+      return;
+    }
     todas.push({
       fecha,
-      tipo: tipoDeCelda(tipoTxt || nombre),
-      nombre: nombre || tipoTxt || 'Sesión',
-      desc,
-      duracion_min: Number.isFinite(dur) ? dur : null,
-      nivel: nivelDeCelda(col('nivel'))
+      tipo: tipoDeCelda(tipoTxt || nombre || texto),
+      nombre: nombre || tipoTxt || (principal[0] || texto).split('\n')[0].slice(0, 60) || 'Sesión',
+      desc: texto,
+      duracion_min: dur,
+      nivel
     });
+  });
+  todas.forEach(t => {
+    if (!t.nombre) t.nombre = 'Sesión';
+    if (t.desc === t.nombre) t.desc = '';
+    else if (t.desc.startsWith(t.nombre + '\n')) t.desc = t.desc.slice(t.nombre.length + 1);
   });
   todas.sort((a, b) => String(a.fecha || '9').localeCompare(String(b.fecha || '9')));
   return { todas, validas: todas.filter(x => x.fecha) };
@@ -1156,10 +1198,9 @@ $('imp-archivo').onchange = async (e) => {
     const libro = esCsv
       ? X.read(await archivo.text(), { type: 'string', raw: true })
       : X.read(await archivo.arrayBuffer());
-    const hoja = libro.Sheets[libro.SheetNames[0]];
-    const { todas, validas } = interpretarFilas(X.utils.sheet_to_json(hoja, { defval: '', raw: true }));
+    const { todas, validas } = interpretarFilas(filasDeLibro(X, libro));
     if (!todas.length) {
-      return aviso('No he encontrado sesiones. Revisa que la primera fila tenga los títulos Fecha, Tipo, Nombre, Descripción y Duración.');
+      return aviso('No he encontrado sesiones. Revisa que haya una fila de títulos (Fecha, Tipo, Nombre, Descripción…) y filas con contenido debajo.');
     }
     filasImportar = todas;
     const res = document.createElement('p');
@@ -1175,6 +1216,7 @@ $('imp-archivo').onchange = async (e) => {
       [v.fecha || 'sin fecha', v.tipo, v.nombre + (v.desc ? ' — ' + v.desc : ''), v.duracion_min ?? '-'].forEach(c => {
         const td = document.createElement('td');
         td.textContent = c;
+        td.style.whiteSpace = 'pre-line';
         tr.appendChild(td);
       });
       tabla.appendChild(tr);
