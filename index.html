@@ -165,6 +165,18 @@ h3{margin:12px 0 6px;font-size:15px}
 .barra-fondo{height:14px;background:#e3e6e8;border-radius:4px;overflow:hidden}
 .barra{height:100%;background:#1976d2;border-radius:4px}
 #m-fecha,#m-fc,#m-hrv,#m-peso,#m-sueno,#m-estres{margin-bottom:6px}
+
+/* Menú en columna a la izquierda (pantallas anchas), estilo intervals.icu.
+   En móvil se mantiene la barra horizontal de arriba. */
+@media (min-width:900px){
+  header{position:sticky;top:0;z-index:7;flex-wrap:nowrap;height:64px}
+  .tabs-t{position:fixed;left:0;top:64px;bottom:0;width:210px;flex-direction:column;gap:4px;margin:0;padding:16px 10px;border-radius:0;overflow-x:hidden;overflow-y:auto;z-index:6;box-shadow:2px 0 8px rgba(0,0,0,.18)}
+  .tabs-t .tabt{width:100%;text-align:left;padding:11px 14px;font-size:15px;background:transparent;color:#D9DDE0;border-left:4px solid transparent;border-radius:6px}
+  .tabs-t .tabt:hover{background:#3a3e41}
+  .tabs-t .tabt.on{background:#4a4f52;color:#fff;border-left-color:#e0b43a;font-weight:700}
+  body:has(#panel:not(.oculto)) .fondo,body:has(#vista-atleta:not(.oculto)) .fondo{left:210px}
+  main:has(#panel:not(.oculto)),main:has(#vista-atleta:not(.oculto)){max-width:1280px;margin:0;padding-left:230px;padding-right:20px}
+}
 </style>
 </head>
 <body>
@@ -380,11 +392,6 @@ h3{margin:12px 0 6px;font-size:15px}
   </div>
 
   <div id="vista-atleta" class="oculto">
-    <div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <button id="btn-sync-strava" class="gold">Sincronizar Strava</button>
-      <span id="sync-estado" class="muted"></span>
-    </div>
-    <button id="conectarStrava" class="sec" style="margin-bottom:10px">Conectar con Strava</button>
     <nav class="tabs-t" id="tabs-a">
       <button class="tabt on" data-ta="cal">Calendario</button>
       <button class="tabt" data-ta="hist">Historial</button>
@@ -777,10 +784,43 @@ function modoEntrenador() {
   $('cal-fecha').value = iso(new Date());
 }
 
+const CAMPOS_METRICAS = {
+  'm-peso': 'peso_kg', 'm-altura': 'altura_cm', 'm-anos': 'anos_corriendo',
+  'm-km': 'km_semana', 'm-pulso': 'pulso_reposo', 'm-hrv': 'hrv_ms',
+  'm-fcmax': 'fc_max', 'm-sueno': 'horas_sueno', 'm-dias': 'dias_disponibles',
+  'm-nivel': 'nivel_percibido', 'm-objetivo': 'objetivo',
+  'm-lesiones': 'lesiones', 'm-comentarios': 'comentarios'
+};
 const ETIQUETAS_METRICAS = {
-  fc_reposo: 'Pulso reposo', hrv: 'HRV', peso_kg: 'Peso', sueno_h: 'Sueño', estres: 'Estrés'
+  peso_kg: 'Peso', altura_cm: 'Altura', anos_corriendo: 'Años corriendo', km_semana: 'Km/semana',
+  pulso_reposo: 'Pulso reposo', hrv_ms: 'HRV', fc_max: 'FC máx', horas_sueno: 'Sueño',
+  dias_disponibles: 'Días/semana', nivel_percibido: 'Nivel percibido', objetivo: 'Objetivo',
+  lesiones: 'Lesiones', comentarios: 'Comentarios'
 };
 
+async function cargarMetricasAtleta(atletaId) {
+  const { data } = await sb.from('metricas').select('*')
+    .eq('atleta_id', atletaId).order('fecha', { ascending: false }).limit(1);
+  if (!data || !data.length) return;
+  const m = data[0];
+  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
+    $(id).value = m[campo] ?? '';
+  });
+  $('m-estado').textContent = `Última actualización: ${m.fecha}`;
+}
+
+$('m-guardar').onclick = async () => {
+  const fila = { atleta_id: miAtleta.id };
+  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
+    const v = $(id).value.trim();
+    const numerico = ['peso_kg','altura_cm','anos_corriendo','km_semana','pulso_reposo','hrv_ms',
+      'fc_max','horas_sueno','dias_disponibles'].includes(campo);
+    fila[campo] = v === '' ? null : (numerico ? Number(v) : v);
+  });
+  const { error } = await sb.from('metricas').insert(fila);
+  if (error) return alert(error.message);
+  $('m-estado').textContent = `Guardado el ${new Date().toLocaleDateString('es-ES')}`;
+};
 
 async function cargarMetricasTrainer(atletaId) {
   const box = $('metricas-t');
@@ -812,6 +852,7 @@ async function modoAtleta(a) {
   mostrarTabA('cal');
   $('m-fecha').value = iso(new Date());
   cargarTodoAtleta();
+  cargarMetricasAtleta(a.id);
 }
 
 async function cargarBibliotecaAtleta() {
@@ -1715,7 +1756,6 @@ $('btn-vista').onclick = alternarVista;
 $('btn-vista-a').onclick = alternarVista;
 
 async function cargarMes() {
-  if (!atletaActual) return;
   const ini = mesActual;
   const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 0);
   const sufijo = modoAtletaActivo ? '-a' : '';
@@ -1782,7 +1822,6 @@ async function cargarMes() {
 }
 
 async function cargarSemana() {
-  if (!atletaActual) return;
   if (vistaMes) return cargarMes();
   const inicio = iso(semanaInicio);
   const fin = iso(sumarDias(semanaInicio, 6));
@@ -2084,6 +2123,7 @@ $('btn-plan-aplicar').onclick = async () => {
     atleta_id: atletaId, nombre: plan.nombre, fecha_inicio: iso(base), fecha_fin: fin
   }).select().single();
   if (eb) return alert(eb.message);
+
   const sesiones = filas.map(f => ({
     atleta_id: atletaId,
     bloque_id: bloque.id,
@@ -2102,55 +2142,6 @@ $('btn-plan-aplicar').onclick = async () => {
     cargarSemana();
   }
 };
-
-/* ---------- SINCRONIZAR STRAVA ---------- */
-const STRAVA_FUNCION = 'https://orrfqvrsrjfddhuzleel.supabase.co/functions/v1/strava-actividades';
-const TIPOS_STRAVA = {
-  Run: ['rodaje', 'series', 'tirada'], TrailRun: ['rodaje', 'series', 'tirada'], VirtualRun: ['rodaje', 'series', 'tirada'],
-  Ride: ['bici'], VirtualRide: ['bici'], WeightTraining: ['fuerza']
-};
-
-$('btn-sync-strava').onclick = sincronizarStrava;
-
-async function sincronizarStrava() {
-  const estado = $('sync-estado');
-  estado.textContent = 'Sincronizando…';
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { estado.textContent = 'Vuelve a entrar en la app.'; return; }
-
-  let datos;
-  try {
-    const r = await fetch(STRAVA_FUNCION, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + session.access_token }
-    });
-    datos = await r.json();
-    if (!r.ok) throw new Error(datos.error || 'Error ' + r.status);
-  } catch (e) {
-    estado.textContent = 'No se pudo sincronizar: ' + e.message;
-    return;
-  }
-
-  const usadas = new Set();
-  let emparejadas = 0, sinSesion = 0;
-  for (const act of datos.actividades) {
-    const fecha = act.fecha.slice(0, 10);
-    const tipos = TIPOS_STRAVA[act.tipo] || [];
-    const candidata = datosAtleta.sesiones.find(s =>
-      s.fecha === fecha && !usadas.has(s.id) && s.estado !== 'hecha' && tipos.includes(s.tipo));
-    if (!candidata) { sinSesion++; continue; }
-    usadas.add(candidata.id);
-    const { error } = await sb.from('sesiones_planificadas')
-      .update({ estado: 'hecha', km_reales: act.km })
-      .eq('id', candidata.id);
-    if (error) { estado.textContent = 'Error al guardar: ' + error.message; return; }
-    emparejadas++;
-  }
-
-  estado.textContent = `${emparejadas} sesiones marcadas como hechas · ${sinSesion} actividades sin sesión planificada`;
-  await cargarTodoAtleta();
-  cargarSemana();
-}
-
 
 mostrarSegunSesion();
 </script>
@@ -2196,6 +2187,5 @@ mostrarSegunSesion();
     <div class="acciones"><button id="dia-cerrar" class="link">Cerrar</button></div>
   </div>
 </div>
-<script src="strava.js"></script>
 </body>
 </html>
