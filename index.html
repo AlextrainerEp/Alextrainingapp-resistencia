@@ -217,7 +217,7 @@ h3{margin:12px 0 6px;font-size:15px}
 
 <header id="hdr" class="oculto">
   <img class="logo" src="logo-alex.png" alt="" onerror="this.remove()">
-  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 15-nov-a</span></div>
+  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 15-nov-b</span></div>
   <button id="btn-salir" class="sec">Salir</button>
 </header>
 
@@ -482,6 +482,7 @@ h3{margin:12px 0 6px;font-size:15px}
       <button class="tabt" data-ta="prog">Progreso</button>
       <button class="tabt" data-ta="perfil">Perfil</button>
       <button class="tabt" data-ta="msg">Mensajes</button>
+      <button class="tabt" data-ta="strava">Strava</button>
     </nav>
     <div id="resumen-atleta" class="card"></div>
     <div id="objetivo-a" class="card oculto" style="font-weight:600"></div>
@@ -546,11 +547,6 @@ h3{margin:12px 0 6px;font-size:15px}
         <div class="cab">Historial (últimas 12 semanas)</div>
         <div id="historial-a"></div>
       </div>
-      <div class="card">
-        <div class="cab">Actividades de Strava</div>
-        <div id="actividades-a"></div>
-        <div class="pie-strava">Powered by Strava</div>
-      </div>
     </section>
 
     <section class="seca" data-sa="carga">
@@ -582,6 +578,24 @@ h3{margin:12px 0 6px;font-size:15px}
       </div>
     </section>
 
+    <section class="seca" data-sa="strava">
+      <div class="card">
+        <div class="cab">Strava</div>
+        <p id="strava-estado" class="muted"></p>
+        <div class="acciones">
+          <button id="btn-strava-conectar" class="btn-strava" type="button">Conectar con Strava</button>
+          <button id="btn-strava-sync" class="sec oculto" type="button">Sincronizar ahora</button>
+          <button id="btn-strava-quitar" class="danger oculto" type="button">Desconectar</button>
+        </div>
+        <p class="muted">Al conectar, tus actividades de los últimos 30 días se traen a la app y las sesiones pendientes de esos días se marcan como hechas con su tiempo y distancia. Tu entrenador podrá verlas.</p>
+      </div>
+      <div class="card">
+        <div class="cab">Actividades de Strava</div>
+        <div id="actividades-a"></div>
+        <div class="pie-strava">Powered by Strava</div>
+      </div>
+    </section>
+
     <section class="seca" data-sa="perfil">
       <div class="card">
         <div class="cab">Mi perfil</div>
@@ -595,16 +609,6 @@ h3{margin:12px 0 6px;font-size:15px}
         <h3>Mis zonas</h3>
         <p class="muted">Se calculan solas a partir de tu perfil cada vez que lo guardas.</p>
         <div id="zonas-a"></div>
-      </div>
-      <div class="card">
-        <div class="cab">Strava</div>
-        <p id="strava-estado" class="muted"></p>
-        <div class="acciones">
-          <button id="btn-strava-conectar" class="btn-strava" type="button">Conectar con Strava</button>
-          <button id="btn-strava-sync" class="sec oculto" type="button">Sincronizar ahora</button>
-          <button id="btn-strava-quitar" class="danger oculto" type="button">Desconectar</button>
-        </div>
-        <p class="muted">Al conectar, tus actividades de los últimos 30 días se traen a la app y las sesiones pendientes de esos días se marcan como hechas con su tiempo y distancia. Tu entrenador podrá verlas.</p>
       </div>
     </section>
 
