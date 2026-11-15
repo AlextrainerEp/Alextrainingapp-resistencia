@@ -217,7 +217,7 @@ h3{margin:12px 0 6px;font-size:15px}
 
 <header id="hdr" class="oculto">
   <img class="logo" src="logo-alex.png" alt="" onerror="this.remove()">
-  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 15-nov-c</span></div>
+  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 15-nov-d</span></div>
   <button id="btn-salir" class="sec">Salir</button>
 </header>
 
@@ -1013,7 +1013,7 @@ document.querySelectorAll('#tabs-a .tabt').forEach(b => b.onclick = () => mostra
 
 /* ---------- STRAVA ---------- */
 async function llamarStrava(cuerpo) {
-  const { data, error } = await sb.functions.invoke('strava', { body: cuerpo });
+  const { data, error } = await sb.functions.invoke('strava-funcion-ts', { body: cuerpo });
   if (error) {
     let msg = error.message || String(error);
     try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* sin detalle */ }
