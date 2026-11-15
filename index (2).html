@@ -1,0 +1,3118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alex Training Lab · Resistencia</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Resistencia">
+<meta name="theme-color" content="#2e3133">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d1f21;background:#909398}
+/* Logo de fondo y frase, como en la app de Alex Training Lab */
+.fondo{position:fixed;inset:0;background:#b9bcbe url("logo-fondo.png") no-repeat center 84px/min(80vw,600px) auto;z-index:-1}
+.frase{position:absolute;left:0;right:0;top:calc(84px + min(80vw,600px)*0.37 + 12px);margin:0;padding:0 16px;text-align:center;font-size:18px;line-height:1.4;font-style:italic;color:#111;max-width:640px;margin-inline:auto}
+.frase .autor{display:block;margin-top:6px;font-style:normal;font-size:15px;font-weight:700;color:#e0b43a;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+
+/* Cabecera igual que la app de Alex Training Lab */
+header{background:#2e3133;color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+header img.logo{height:44px}
+header .t{flex:1;font-weight:700;color:#D9DDE0}
+header button{width:auto}
+
+main{max-width:980px;margin:0 auto;padding:calc(84px + min(80vw,600px)*0.37 + 90px) 16px 16px}
+
+/* Tarjetas translúcidas */
+.card{background:rgba(255,255,255,.62);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.login{max-width:440px;margin:0 auto;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0}
+.login label,.login .muted{color:#1d1f21}
+.entrada{display:block;width:min(92%,420px);height:auto;margin:0 auto 18px}
+
+/* Formularios */
+input,select,textarea{width:100%;padding:10px;border:1px solid #bbb;border-radius:8px;font:inherit;margin:4px 0 10px;background:#fff}
+input[type=checkbox]{width:auto}
+textarea{font-size:14px}
+label{display:block}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+
+/* Botones */
+button{background:#2e3133;color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
+button.sec{background:#ddd;color:#1d1f21}
+button.gold{background:#D9DDE0;color:#1d1f21;font-weight:700}
+button.danger{background:#c0392b}
+button.mini{padding:4px 10px;font-size:13px;margin:0;width:auto}
+button.link{background:none;color:#1d1f21;text-decoration:underline;padding:8px 4px;margin:4px 0;width:auto;display:block}
+
+/* Títulos de sección: franja oscura como en la app */
+.cab{background:#2e3133;color:#D9DDE0;padding:6px 10px;border-radius:8px;margin:12px 0 8px;font-size:15px;font-weight:700}
+h2{margin:0 0 12px;font-size:20px}
+h3{margin:12px 0 6px;font-size:15px}
+.muted{color:#666;font-size:13px}
+.msg{padding:8px 12px;border-radius:8px;margin:8px 0}
+.msg.err{background:#fdecea;color:#c0392b}
+.msg.ok{background:#e8f5e9;color:#2e7d32}
+
+/* Lista de atletas */
+.atleta{padding:10px;border-bottom:1px solid rgba(0,0,0,.12)}
+.clickable{cursor:pointer;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+
+/* Zonas */
+.zona{padding:4px 0;border-bottom:1px solid rgba(0,0,0,.12)}
+
+/* Calendario */
+.nav{display:flex;gap:8px;align-items:center}
+.nav button{width:auto}
+.nav span{flex:1;text-align:center;font-weight:700}
+.dia{background:rgba(255,255,255,.5);border-radius:8px;padding:8px 10px;margin-top:8px}
+.dia h3{margin:0 0 4px}
+.sesion{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+.sesion select{width:auto;margin:0;padding:6px}
+.sesion button{width:auto;margin:0;padding:4px 10px;background:#999}
+.sesion .txt{flex:1}
+.resumen-semana{font-size:13px;font-weight:700;color:#2e3133;margin:6px 0 8px}
+.semana-grid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:6px;overflow-x:auto;padding-bottom:6px}
+.dia-col{background:rgba(255,255,255,.55);border-radius:8px;min-height:180px;display:flex;flex-direction:column;overflow:hidden}
+.dia-head{background:#2e3133;color:#D9DDE0;padding:6px 8px;font-size:12px;display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex-wrap:wrap}
+.dia-head b{font-size:13px;color:#fff}
+.dia-body{padding:6px;display:flex;flex-direction:column;gap:6px;flex:1}
+.tarjeta{background:#fff;border-left:5px solid #607d8b;border-radius:6px;padding:6px;box-shadow:0 1px 3px rgba(0,0,0,.12);font-size:12px}
+.tarjeta.hecha{opacity:.65}
+.tarjeta .tit{font-weight:700;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+.tarjeta .det{color:#555;margin:2px 0 4px}
+.tarjeta .acc{display:flex;gap:4px;align-items:center}
+.tarjeta select{width:auto;margin:0;padding:2px;font-size:11px;flex:1;min-width:0}
+.tarjeta button{width:auto;margin:0;padding:2px 6px;font-size:11px}
+.vacio-dia{color:#888;font-size:12px;text-align:center;margin-top:8px}
+
+.oculto{display:none!important}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto;padding:6px 2px;margin-bottom:8px}
+.burbuja{max-width:85%;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.85)}
+.burbuja.mia{align-self:flex-end;background:#d9dde0}
+.burbuja.suya{align-self:flex-start}
+.burbuja small{display:block;color:#555;font-size:11px;margin-bottom:2px}
+.burbuja div{font-size:14px;white-space:pre-line}
+#vista-atleta .semana-grid{grid-template-columns:repeat(7,minmax(150px,1fr))}
+#vista-atleta .tarjeta{font-size:15px;padding:10px;cursor:pointer}
+#vista-atleta .tarjeta .tit{font-size:15px}
+#vista-atleta .dia-head{font-size:14px}
+#vista-atleta .dia-head b{font-size:15px}
+.ver{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 0 8px;cursor:pointer}
+.ver input{width:auto;margin:0}
+
+
+.tabs-t{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:#2e3133;padding:8px;border-radius:10px;margin-bottom:10px}
+.tabt{flex:0 0 auto;background:#4a4f52;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;width:auto}
+.tabt.on{background:#D9DDE0;color:#1d1f21;font-weight:700}
+.secc{display:none}
+.secc.on{display:block}
+.subs{display:flex;gap:6px;overflow-x:auto;margin:8px 0 4px;padding-bottom:4px}
+.subt{flex:0 0 auto;background:#e3e6e8;color:#1d1f21;border:0;border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;width:auto}
+.subt.on{background:#2e3133;color:#fff;font-weight:700}
+.subsec{display:none}
+.subsec.on{display:block}
+.mes-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mes-head{font-size:12px;text-align:center;font-weight:700;padding:4px 0}
+.mes-celda{background:rgba(255,255,255,.85);border-radius:6px;min-height:64px;padding:3px;font-size:11px;cursor:pointer;overflow:hidden}
+.mes-celda.fuera{opacity:.4}
+.mes-num{font-weight:700;font-size:12px}
+.mes-item{border-left:3px solid #999;padding-left:3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal-caja{background:#fff;border-radius:12px;padding:16px;max-width:420px;width:100%}
+.banner-mover{position:fixed;left:0;right:0;bottom:0;background:#2e3133;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:40;font-size:14px}
+.banner-mover button{width:auto}
+.mes-celda{min-height:88px}
+.mes-item{cursor:grab}
+.tarjeta[draggable="true"]{cursor:grab}
+.mover-btn{width:auto;margin-left:6px;padding:2px 8px;border-radius:6px;background:#e3e6e8;color:#1d1f21;border:0;font-size:13px;cursor:pointer}
+
+.nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;max-width:100%}
+.nav #semana-rango,.nav #semana-rango-a{flex:1 1 100%;text-align:center;order:-1}
+.nav button{width:auto;flex:0 0 auto}
+.card{max-width:100%;overflow-x:hidden}
+
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:6px 0}
+.leg{display:flex;align-items:center;gap:4px}
+.leg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.tarjeta{border-left-width:6px}
+.mes-item{border-radius:3px;padding-right:2px}
+
+.modal-grande{max-height:85vh;overflow:auto}
+.dia-lista{max-height:40vh;overflow:auto;margin:8px 0}
+.dia-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee}
+.dia-item button{width:auto}
+#dia-nueva-form{display:grid;gap:6px;margin-top:8px}
+#dia-nueva-form.oculto{display:none}
+
+.tabs-a{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;background:#2e3133;padding:8px;border-radius:10px;margin:10px 0}
+.taba{flex:0 0 auto;background:#4a4f52;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;width:auto}
+.taba.on{background:#D9DDE0;color:#1d1f21;font-weight:700}
+.seca{display:none}
+.seca.on{display:block}
+#resumen-atleta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:#f4f5f6;border-radius:8px;padding:8px;text-align:center}
+.stat b{display:block;font-size:17px}
+.stat small{color:#555}
+.hist-item{padding:8px 0;border-bottom:1px solid #eee;cursor:pointer}
+.barra-row{display:grid;grid-template-columns:52px 1fr 120px;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.barra-fondo{height:14px;background:#e3e6e8;border-radius:4px;overflow:hidden}
+.barra{height:100%;background:#1976d2;border-radius:4px}
+#m-fecha,#m-fc,#m-hrv,#m-peso,#m-sueno,#m-estres{margin-bottom:6px}
+
+/* Menú en columna a la izquierda (pantallas anchas), estilo intervals.icu.
+   En móvil se mantiene la barra horizontal de arriba. */
+@media (min-width:900px){
+  header{position:sticky;top:0;z-index:7;flex-wrap:nowrap;height:64px}
+  .tabs-t{position:fixed;left:0;top:64px;bottom:0;width:210px;flex-direction:column;gap:4px;margin:0;padding:16px 10px;border-radius:0;overflow-x:hidden;overflow-y:auto;z-index:6;box-shadow:2px 0 8px rgba(0,0,0,.18)}
+  .tabs-t .tabt{width:100%;text-align:left;padding:11px 14px;font-size:15px;background:transparent;color:#D9DDE0;border-left:4px solid transparent;border-radius:6px}
+  .tabs-t .tabt:hover{background:#3a3e41}
+  .tabs-t .tabt.on{background:#4a4f52;color:#fff;border-left-color:#e0b43a;font-weight:700}
+  body:has(#panel:not(.oculto)) .fondo,body:has(#vista-atleta:not(.oculto)) .fondo{left:210px}
+  main:has(#panel:not(.oculto)),main:has(#vista-atleta:not(.oculto)){max-width:1280px;margin:0;padding-left:230px;padding-right:20px}
+}
+.punto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.25)}
+.fila-atleta{padding:12px 10px;border-bottom:1px solid rgba(0,0,0,.12);cursor:pointer}
+.fila-atleta:hover{background:rgba(255,255,255,.5)}
+.fila-atleta .nom{font-weight:700;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;padding:3px 8px;border-radius:12px;background:#e3e6e8;color:#1d1f21;white-space:nowrap}
+.chip.ok{background:#c8e6c9}.chip.aviso{background:#ffe0b2}.chip.mal{background:#ffcdd2}.chip.info{background:#bbdefb}
+.paso-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.paso-row>*{flex:1 1 70px;margin:0;min-width:0;padding:8px}
+.paso-row>input[type=text]{flex:3 1 170px}
+.paso-row>button{flex:0 0 38px;width:38px}
+.pasos-lista{margin:6px 0 10px;padding-left:22px;font-size:14px;line-height:1.55}
+.forma-leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;margin-top:4px}
+.forma-leyenda i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px}
+.nota-entrenador{background:#fff8e1;border-left:4px solid #e0b43a;border-radius:6px;padding:8px 10px;margin:8px 0;font-size:14px;white-space:pre-line}
+.importar{margin:10px 0;padding:10px;border:1px dashed #888;border-radius:8px;background:rgba(255,255,255,.4)}
+.importar summary{cursor:pointer;font-weight:700}
+.imp-tabla{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+.imp-tabla td,.imp-tabla th{border-bottom:1px solid rgba(0,0,0,.15);padding:4px 6px;text-align:left;vertical-align:top}
+.zona-borrado{margin:14px 0 6px;padding:12px;border:1px solid rgba(198,40,40,.45);border-radius:8px;background:rgba(255,255,255,.45)}
+.zona-borrado h3{margin-top:0}
+.fila-bloque{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.12);font-size:14px}
+.fila-bloque span{flex:1 1 200px}
+.fila-bloque button,.zona-borrado .row button{width:auto}
+.btn-strava{background:#FC4C02;color:#fff;font-weight:700}
+.act-fila{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.12);font-size:14px}
+.act-fila b{font-size:15px}
+.act-fila a{color:#FC4C02;font-weight:700;margin-left:6px;white-space:nowrap}
+.pie-strava{font-size:11px;color:#555;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="fondo">
+  <p class="frase"><b>“Everything negative, pressure, challenges, is all an opportunity for me to rise”</b><span class="autor">— Kobe Bryant</span></p>
+</div>
+
+<header id="hdr" class="oculto">
+  <img class="logo" src="logo-alex.png" alt="" onerror="this.remove()">
+  <div class="t">Alex Training Lab · Resistencia <span id="version-app" style="font-size:11px;font-weight:400;opacity:.7">· versión 15-nov-a</span></div>
+  <button id="btn-salir" class="sec">Salir</button>
+</header>
+
+<main>
+  <div id="login" class="card login">
+    <img class="entrada" src="logo-login.png" alt="Alex Training Lab" onerror="this.remove()">
+    <input id="nombre-registro" type="text" placeholder="Nombre y apellidos (solo para crear cuenta)">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Contraseña">
+    <label class="ver"><input type="checkbox" id="ver-pass"> Mostrar contraseña</label>
+    <div class="row">
+      <button id="btn-login" class="gold">Entrar</button>
+      <button id="btn-registro" class="sec">Crear cuenta</button>
+    </div>
+    <button id="btn-olvido" class="link">He olvidado la contraseña</button>
+    <p id="error" class="msg err" style="display:none"></p>
+  </div>
+
+  <div id="nueva-pass" class="card login oculto">
+    <h2>Nueva contraseña</h2>
+    <input id="pass-nueva" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)">
+    <label class="ver"><input type="checkbox" id="ver-pass-nueva"> Mostrar contraseña</label>
+    <button id="btn-pass-nueva">Guardar contraseña</button>
+  </div>
+
+  <div id="panel" class="oculto">
+    <div id="badge-admin" class="oculto muted" style="margin:4px 0 10px">Modo administrador: gestionas los atletas de la cuenta principal</div>
+    <nav class="tabs-t" id="tabs-t">
+      <button class="tabt on" data-tab="atletas">Atletas</button>
+      <button class="tabt" data-tab="ficha">Ficha</button>
+      <button class="tabt" data-tab="biblio">Biblioteca y planes</button>
+    </nav>
+
+    <section class="secc on" data-sec="atletas">
+    <div class="card">
+      <div class="cab">Nuevo atleta</div>
+      <input id="nombre" placeholder="Nombre">
+      <input id="email-atleta" type="email" placeholder="Email (opcional)">
+      <button id="btn-crear">Añadir atleta</button>
+    </div>
+
+    <div class="card">
+      <div class="cab">Atletas · resumen de la semana</div>
+      <div id="lista"></div>
+    </div>
+
+    </section>
+
+    <section class="secc" data-sec="ficha">
+    <div id="ficha" class="card oculto">
+      <div class="cab" id="ficha-nombre"></div>
+      <div id="ficha-objetivo" class="muted" style="margin:6px 0"></div>
+      <nav class="subs">
+        <button class="subt on" data-sub="calendario">Calendario</button>
+        <button class="subt" data-sub="tests">Tests y plan</button>
+        <button class="subt" data-sub="zonas">Zonas</button>
+        <button class="subt" data-sub="perfil">Perfil</button>
+        <button class="subt" data-sub="mensajes">Mensajes</button>
+        <button class="subt" data-sub="cuenta">Cuenta</button>
+      </nav>
+
+<div class="subsec" data-sub="cuenta">
+      <h3>Cuenta de acceso</h3>
+      <div class="muted" id="acceso-estado"></div>
+      <div class="row">
+        <input id="acceso-email" type="email" placeholder="Email de acceso">
+        <button id="btn-acceso" class="sec">Guardar y liberar</button>
+      </div>
+      <div class="row">
+        <button id="btn-asignar-atleta" class="gold oculto">Asignarme este atleta</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btn-borrar-atleta" class="sec" style="color:#b00020">Eliminar atleta</button>
+      </div>
+
+</div>
+<div class="subsec" data-sub="perfil">
+      <h3>Perfil del atleta</h3>
+      <div id="perfil-resumen" class="muted"></div>
+
+</div>
+<div class="subsec" data-sub="zonas">
+      <h3>Zonas</h3>
+      <div class="row">
+        <select id="zona-tipo"><option value="fc">FC</option><option value="ritmo">Ritmo</option></select>
+        <input id="zona-num" type="number" min="1" max="7" placeholder="Zona">
+      </div>
+      <div class="row">
+        <input id="zona-min" type="number" step="any" placeholder="Mínimo">
+        <input id="zona-max" type="number" step="any" placeholder="Máximo">
+      </div>
+      <button id="btn-zona">Guardar zona</button>
+      <button id="btn-zonas-perfil" class="sec">Calcular zonas desde el perfil</button>
+      <div id="zonas"></div>
+
+</div>
+<div class="subsec" data-sub="tests">
+      <h3>Tests</h3>
+      <div class="row">
+        <select id="test-tipo"><option value="5k">5 km (mm:ss)</option><option value="cooper">Cooper 12 min (metros)</option></select>
+        <input id="test-fecha" type="date">
+      </div>
+      <input id="test-resultado" placeholder="Resultado (ej. 24:30 o 2400)">
+      <button id="btn-test">Guardar test</button>
+      <p id="nivel-sugerido" class="muted"></p>
+      <div id="tests"></div>
+
+
+      <h3>Métricas</h3>
+      <div id="metricas-t" class="muted" style="white-space:pre-line"></div>
+
+      <h3>Condición, fatiga y forma</h3>
+      <div id="forma-t"></div>
+
+</div>
+<div class="subsec" data-sub="mensajes">
+      <h3>Acceso y mensajes</h3>
+      <label class="ver"><input type="checkbox" id="ver-biblio-atleta"> Puede ver la biblioteca de sesiones</label>
+      <div id="chat-t-msgs" class="chat"></div>
+      <div class="row">
+        <textarea id="chat-t-txt" rows="2" placeholder="Escribe un mensaje al atleta"></textarea>
+        <button id="chat-t-enviar" class="mini">Enviar</button>
+      </div>
+
+</div>
+<div class="subsec on" data-sub="calendario">
+      <h3>Calendario</h3>
+      <div class="nav">
+        <button id="semana-ant" class="sec">←</button>
+        <span id="semana-rango"></span>
+        <button id="semana-sig" class="sec">→</button>
+        <button id="btn-vista" class="sec">Ver mes</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <select id="cal-lib"></select>
+        <input id="cal-fecha" type="date">
+      </div>
+      <textarea id="cal-desc" rows="2" placeholder="Notas para esta sesión (opcional)"></textarea>
+      <button id="btn-asignar">Añadir al calendario</button>
+      <h3>Actividades de Strava</h3>
+      <div class="acciones"><button id="btn-strava-sync-t" class="sec" type="button">Sincronizar Strava de este atleta</button></div>
+      <div id="actividades-t"></div>
+      <div class="pie-strava">Powered by Strava</div>
+      <div class="zona-borrado">
+        <h3>Borrar entrenamientos</h3>
+        <div id="bloques-lista" class="muted"></div>
+        <div class="row" style="margin-top:8px">
+          <input id="borrar-desde" type="date" title="Desde">
+          <input id="borrar-hasta" type="date" title="Hasta">
+          <button id="btn-borrar-rango" class="danger" type="button">Borrar entre fechas</button>
+        </div>
+        <div class="acciones">
+          <button id="btn-borrar-futuras" class="danger" type="button">Borrar lo que queda por hacer</button>
+          <button id="btn-borrar-todo" class="danger" type="button">Borrar todo el calendario</button>
+        </div>
+      </div>
+      <div class="leyenda" data-leyenda></div>
+      <div class="leyenda"><span class="leg"><i class="punto" style="background:#2e7d32"></i>Hecha según el plan</span><span class="leg"><i class="punto" style="background:#f9a825"></i>Parcial o de más</span><span class="leg"><i class="punto" style="background:#ef6c00"></i>Muy distinta</span><span class="leg"><i class="punto" style="background:#c62828"></i>Sin hacer</span></div>
+      <div id="semana"></div>
+</div>
+    </div>
+    </section>
+
+    <section class="secc" data-sec="biblio">
+    <div class="card">
+      <div class="cab">Planes por nivel (12 semanas, 3 días a la semana)</div>
+      <div class="row">
+        <select id="plan-nivel">
+          <option value="principiante">Principiante</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+        </select>
+        <button id="btn-plan-ver" class="sec">Ver plan</button>
+        <button id="btn-plan-generar">Generar plan</button>
+      </div>
+      <div id="plan-vista"></div>
+
+      <h3>Aplicar este plan a un atleta</h3>
+      <div class="row">
+        <select id="plan-atleta"></select>
+        <input id="plan-fecha" type="date">
+      </div>
+      <button id="btn-plan-objetivo" class="sec" type="button">Ajustar la fecha para terminar en el objetivo del atleta</button>
+      <button id="btn-plan-aplicar">Aplicar plan al calendario</button>
+    </div>
+
+    <div class="card">
+      <div class="cab">Subir entrenamiento desde Excel o Google Sheets</div>
+      <p class="muted">Una fila por sesión, con las columnas Fecha, Tipo, Nombre, Descripción y Duración (min). Cualquier otra columna (Ejercicios, Explicación, Ritmos…) se añade a la explicación de la sesión, y las filas sin fecha se suman a la sesión de arriba. Desde Google Sheets: Archivo → Descargar → Microsoft Excel (.xlsx).</p>
+      <div class="row">
+        <input id="imp-archivo" type="file" accept=".xlsx,.xls,.csv,.ods">
+        <button id="btn-plantilla" class="sec" type="button">Descargar plantilla</button>
+      </div>
+      <div id="imp-vista"></div>
+      <div id="imp-destinos" class="oculto">
+        <h3>Ponerlo en el calendario de un atleta</h3>
+        <div class="row">
+          <select id="imp-atleta"></select>
+          <button id="imp-cargar" type="button">Cargar al calendario</button>
+        </div>
+        <h3>Guardarlo en la biblioteca</h3>
+        <div class="row">
+          <select id="imp-nivel">
+            <option value="principiante">Principiante</option>
+            <option value="intermedio">Intermedio</option>
+            <option value="avanzado">Avanzado</option>
+          </select>
+          <button id="imp-biblio" class="sec" type="button">Guardar en la biblioteca</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cab">Biblioteca de sesiones</div>
+      <input id="s-nombre" placeholder="Nombre (ej. Series 6x800)">
+      <select id="s-nivel">
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
+      <select id="s-tipo">
+        <option value="rodaje">Rodaje</option>
+        <option value="series">Series</option>
+        <option value="tirada">Tirada larga</option>
+        <option value="fuerza">Fuerza</option>
+        <option value="bici">Bici</option>
+        <option value="otro">Otro</option>
+      </select>
+      <div class="row">
+        <input id="s-duracion" type="number" min="0" placeholder="Duración (min)">
+        <input id="s-carga" type="number" min="0" placeholder="Carga">
+      </div>
+      <textarea id="s-descripcion" rows="3" placeholder="Descripción"></textarea>
+      <h3>Pasos de la sesión (opcional)</h3>
+      <p class="muted">Cada paso con su zona. El atleta verá sus propios ritmos y pulsaciones. Si todos los pasos van en minutos, la duración se calcula sola.</p>
+      <div id="s-pasos"></div>
+      <button id="btn-paso" class="sec" type="button">+ Añadir paso</button>
+      <div class="acciones">
+        <button id="btn-sesion">Guardar sesión</button>
+        <button id="btn-cancelar-sesion" class="sec oculto">Cancelar edición</button>
+      </div>
+      <select id="filtro-nivel">
+        <option value="">Todos los niveles</option>
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
+      <div id="biblioteca"></div>
+    </div>
+    </section>
+  </div>
+  <div id="pendiente" class="card oculto">
+    <div class="cab">Cuenta pendiente</div>
+    <p>Tu cuenta está registrada. Tu entrenador tiene que asignarte a su cuenta para ver tu calendario. Avísale para que lo haga.</p>
+  </div>
+
+  <div id="vista-atleta" class="oculto">
+    <nav class="tabs-t" id="tabs-a">
+      <button class="tabt on" data-ta="cal">Calendario</button>
+      <button class="tabt" data-ta="hist">Historial</button>
+      <button class="tabt" data-ta="carga">Carga</button>
+      <button class="tabt" data-ta="prog">Progreso</button>
+      <button class="tabt" data-ta="perfil">Perfil</button>
+      <button class="tabt" data-ta="msg">Mensajes</button>
+    </nav>
+    <div id="resumen-atleta" class="card"></div>
+    <div id="objetivo-a" class="card oculto" style="font-weight:600"></div>
+
+    <section class="seca on" data-sa="cal">
+      <div class="card">
+        <div class="cab">Mi calendario</div>
+        <div class="nav">
+          <button id="semana-ant-a" class="sec">←</button>
+          <span id="semana-rango-a"></span>
+          <button id="semana-sig-a" class="sec">→</button>
+          <button id="btn-vista-a" class="sec">Ver mes</button>
+        </div>
+        <div class="leyenda" data-leyenda></div>
+      <div class="leyenda"><span class="leg"><i class="punto" style="background:#2e7d32"></i>Hecha según el plan</span><span class="leg"><i class="punto" style="background:#f9a825"></i>Parcial o de más</span><span class="leg"><i class="punto" style="background:#ef6c00"></i>Muy distinta</span><span class="leg"><i class="punto" style="background:#c62828"></i>Sin hacer</span></div>
+        <div id="semana-a"></div>
+      </div>
+
+      <div id="detalle-atleta" class="card oculto">
+        <div class="cab" id="det-titulo"></div>
+        <div class="muted" id="det-meta"></div>
+        <p id="det-texto" style="white-space:pre-line;font-size:15px;line-height:1.5"></p>
+        <div id="det-pasos"></div>
+        <div id="det-comentario" class="nota-entrenador oculto"></div>
+        <label>Estado
+          <select id="det-estado">
+            <option value="pendiente">pendiente</option>
+            <option value="hecha">hecha</option>
+            <option value="omitida">omitida</option>
+          </select>
+        </label>
+        <label>Esfuerzo percibido (1 muy suave · 10 máximo)
+          <select id="det-rpe">
+            <option value="">—</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          </select>
+        </label>
+        <label>Minutos reales
+          <input id="det-min" type="number" min="0" inputmode="numeric" placeholder="ej. 45">
+        </label>
+        <label>Km reales
+          <input id="det-km" type="text" inputmode="decimal" placeholder="ej. 8.5">
+        </label>
+        <label>Tus notas
+          <textarea id="det-notas" rows="2" placeholder="Cómo te has sentido"></textarea>
+        </label>
+        <div class="row">
+          <button id="det-guardar" class="gold">Guardar</button>
+          <button id="det-cerrar" class="sec">Cerrar</button>
+        </div>
+      </div>
+
+      <div id="biblio-atleta" class="card oculto">
+        <div class="cab">Biblioteca de sesiones</div>
+        <div id="biblio-atleta-lista"></div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="hist">
+      <div class="card">
+        <div class="cab">Historial (últimas 12 semanas)</div>
+        <div id="historial-a"></div>
+      </div>
+      <div class="card">
+        <div class="cab">Actividades de Strava</div>
+        <div id="actividades-a"></div>
+        <div class="pie-strava">Powered by Strava</div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="carga">
+      <div class="card">
+        <div class="cab">Carga de entrenamiento</div>
+        <p class="muted">La carga de cada sesión es la duración × el esfuerzo que marcas. Rellena el esfuerzo y los km al terminar cada sesión.</p>
+        <div id="carga-a"></div>
+        <h3>Condición, fatiga y forma</h3>
+        <div id="forma-a"></div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="prog">
+      <div class="card">
+        <div class="cab">Mis tests</div>
+        <div id="tests-a"></div>
+      </div>
+      <div class="card">
+        <div class="cab">Registrar hoy</div>
+        <p class="muted">Pulsaciones en reposo, VFC, peso, sueño y estrés. Un registro por día.</p>
+        <input id="m-fecha" type="date">
+        <input id="m-fc" type="text" inputmode="decimal" placeholder="Pulsaciones en reposo (ppm)">
+        <input id="m-hrv" type="text" inputmode="decimal" placeholder="VFC (ms)">
+        <input id="m-peso" type="text" inputmode="decimal" placeholder="Peso (kg)">
+        <input id="m-sueno" type="text" inputmode="decimal" placeholder="Horas de sueño">
+        <input id="m-estres" type="text" inputmode="decimal" placeholder="Estrés (1-10)">
+        <button id="m-guardar" class="gold">Guardar registro</button>
+        <div id="metricas-a" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="perfil">
+      <div class="card">
+        <div class="cab">Mi perfil</div>
+        <p class="muted">Estos datos sirven para ajustar tu entrenamiento a tu nivel. Deja en blanco lo que no sepas.</p>
+        <div id="perfil-form"></div>
+        <label class="ver"><input type="checkbox" id="pf-consentimiento"> Acepto que mis datos de salud (pulso, VFC, lesiones) se usen para planificar mi entrenamiento</label>
+        <div class="row">
+          <button id="btn-perfil-guardar" class="gold">Guardar perfil</button>
+          <span id="perfil-estado" class="muted"></span>
+        </div>
+        <h3>Mis zonas</h3>
+        <p class="muted">Se calculan solas a partir de tu perfil cada vez que lo guardas.</p>
+        <div id="zonas-a"></div>
+      </div>
+      <div class="card">
+        <div class="cab">Strava</div>
+        <p id="strava-estado" class="muted"></p>
+        <div class="acciones">
+          <button id="btn-strava-conectar" class="btn-strava" type="button">Conectar con Strava</button>
+          <button id="btn-strava-sync" class="sec oculto" type="button">Sincronizar ahora</button>
+          <button id="btn-strava-quitar" class="danger oculto" type="button">Desconectar</button>
+        </div>
+        <p class="muted">Al conectar, tus actividades de los últimos 30 días se traen a la app y las sesiones pendientes de esos días se marcan como hechas con su tiempo y distancia. Tu entrenador podrá verlas.</p>
+      </div>
+    </section>
+
+    <section class="seca" data-sa="msg">
+      <div class="card">
+        <div class="cab">Mensajes con tu entrenador</div>
+        <div id="chat-a-msgs" class="chat"></div>
+        <div class="row">
+          <textarea id="chat-a-txt" rows="2" placeholder="Escribe un mensaje"></textarea>
+          <button id="chat-a-enviar" class="mini">Enviar</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+// Identificador público de tu aplicación de Strava (strava.com/settings/api → «ID de cliente»)
+const STRAVA_CLIENT_ID = 'PON_AQUI_TU_ID_DE_CLIENTE';
+
+// Si volvemos de autorizar en Strava, guardamos el código y limpiamos la dirección
+// antes de que Supabase la lea.
+{
+  const q = new URLSearchParams(location.search);
+  if (q.get('state') === 'strava') {
+    if (q.get('code')) sessionStorage.setItem('strava_code', q.get('code'));
+    if (q.get('error')) sessionStorage.setItem('strava_error', q.get('error'));
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
+const SUPABASE_URL = 'https://orrfqvrsrjfddhuzleel.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_PJeYDWMoLoRnZAT3o3jGWw_eBh5uwSR';
+// La sesión se guarda en sessionStorage: cada pestaña tiene su propia cuenta.
+// Con localStorage, todas las pestañas del mismo sitio comparten sesión y al
+// recargar una pestaña podía entrar con la cuenta que se había abierto en otra.
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true }
+});
+
+let atletaActual = null;
+let sesionEditandoId = null;
+let bibliotecaCache = [];
+let semanaInicio = lunesDe(new Date());
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const $ = id => document.getElementById(id);
+
+function mostrarError(el, texto) { el.textContent = texto; el.style.display = texto ? 'block' : 'none'; }
+
+/* ---------- UTILIDADES DE FECHA ---------- */
+
+function lunesDe(fecha) {
+  const d = new Date(fecha);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+function sumarDias(fecha, n) {
+  const d = new Date(fecha);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+function iso(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+/* ---------- SESIÓN Y LOGIN ---------- */
+
+let miUserId = null;
+let miAtleta = null;
+let modoAtletaActivo = false;
+const chatTimers = {};
+
+async function mostrarSegunSesion() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('registro') === '1' && params.get('email')) {
+    $('email').value = params.get('email');
+  }
+  if (window.location.hash.includes('type=recovery')) {
+    $('login').classList.add('oculto');
+    $('panel').classList.add('oculto');
+    $('vista-atleta').classList.add('oculto');
+    $('hdr').classList.add('oculto');
+    $('nueva-pass').classList.remove('oculto');
+    return;
+  }
+  $('nueva-pass').classList.add('oculto');
+  const { data: { session } } = await sb.auth.getSession();
+  $('login').classList.toggle('oculto', !!session);
+  $('hdr').classList.toggle('oculto', !session);
+  if (!session) {
+    $('pendiente').classList.add('oculto');
+    $('panel').classList.add('oculto');
+    $('vista-atleta').classList.add('oculto');
+    return;
+  }
+  miUserId = session.user.id;
+  const esEntrenador = await esAdminCuenta(miUserId);
+  if (esEntrenador) return modoEntrenador();
+  const atleta = await buscarFichaAtleta(miUserId, session.user.email);
+  if (atleta && atleta.entrenador_id) return modoAtleta(atleta);
+  const nombre = session.user.user_metadata && session.user.user_metadata.nombre;
+  if (!atleta && nombre) {
+    const { error } = await sb.from('atletas').insert({
+      user_id: miUserId, nombre, email: session.user.email
+    });
+    if (error) alert('No se pudo crear tu ficha: ' + error.message);
+  }
+  modoPendiente();
+}
+
+async function buscarFichaAtleta(uid, email) {
+  const { data: mias } = await sb.from('atletas').select('*').eq('user_id', uid).limit(1);
+  if (mias && mias.length) return mias[0];
+  const { data: propias } = await sb.from('atletas').select('id').eq('entrenador_id', uid).limit(1);
+  if (propias && propias.length) return null;
+  const { data: libres } = await sb.from('atletas').select('*')
+    .is('user_id', null).ilike('email', email).limit(1);
+  if (libres && libres.length) {
+    const { data: reclamada, error } = await sb.from('atletas')
+      .update({ user_id: uid }).eq('id', libres[0].id).select().single();
+    if (!error) return reclamada;
+  }
+  return null;
+}
+
+let esAdmin = false;
+
+async function esAdminCuenta(uid) {
+  const { data } = await sb.from('perfiles').select('rol').eq('id', uid).maybeSingle();
+  return !!(data && data.rol === 'admin');
+}
+
+function modoPendiente() {
+  modoAtletaActivo = false;
+  $('panel').classList.add('oculto');
+  $('vista-atleta').classList.add('oculto');
+  $('pendiente').classList.remove('oculto');
+}
+
+const GRUPOS_PERFIL = [
+  { titulo: 'Datos básicos', campos: [
+    { k: 'fecha_nacimiento', l: 'Fecha de nacimiento', t: 'date' },
+    { k: 'sexo', l: 'Sexo', t: 'sel', o: ['', 'Mujer', 'Hombre', 'Otro'] },
+    { k: 'altura_cm', l: 'Altura (cm)', t: 'num' },
+    { k: 'peso_kg', l: 'Peso (kg)', t: 'num' } ] },
+  { titulo: 'Experiencia y volumen', campos: [
+    { k: 'anos_corriendo', l: 'Años corriendo', t: 'num' },
+    { k: 'km_semana_actual', l: 'Km por semana actuales', t: 'num' },
+    { k: 'km_semana_max', l: 'Máximo de km por semana que has aguantado', t: 'num' },
+    { k: 'tirada_max_km', l: 'Tirada más larga (km)', t: 'num' },
+    { k: 'dias_disponibles', l: 'Días a la semana que puedes entrenar', t: 'num' },
+    { k: 'mejor_5k', l: 'Mejor marca 5 km (mm:ss)', t: 'text' },
+    { k: 'mejor_10k', l: 'Mejor marca 10 km (mm:ss)', t: 'text' },
+    { k: 'mejor_media', l: 'Mejor marca media maratón (h:mm:ss)', t: 'text' },
+    { k: 'mejor_maraton', l: 'Mejor marca maratón (h:mm:ss)', t: 'text' } ] },
+  { titulo: 'Fisiología', campos: [
+    { k: 'fc_reposo', l: 'Pulsaciones en reposo (ppm)', t: 'num' },
+    { k: 'fc_max', l: 'Pulsaciones máximas (ppm)', t: 'num' },
+    { k: 'fc_umbral', l: 'Pulsaciones en umbral (ppm)', t: 'num' },
+    { k: 'hrv_media', l: 'VFC media (ms)', t: 'num' },
+    { k: 'vo2max', l: 'VO2max estimado', t: 'num' },
+    { k: 'ritmo_facil', l: 'Ritmo cómodo (min/km)', t: 'text' },
+    { k: 'ritmo_umbral', l: 'Ritmo umbral (min/km)', t: 'text' } ] },
+  { titulo: 'Recuperación y vida', campos: [
+    { k: 'horas_sueno', l: 'Horas de sueño por noche', t: 'num' },
+    { k: 'estres', l: 'Estrés habitual (1-10)', t: 'num' },
+    { k: 'otros_deportes', l: 'Otros deportes o fuerza', t: 'text' },
+    { k: 'reloj', l: 'Reloj o app que usas', t: 'text' } ] },
+  { titulo: 'Lesiones y objetivo', campos: [
+    { k: 'lesiones', l: 'Lesiones actuales o pasadas', t: 'area' },
+    { k: 'objetivo', l: 'Objetivo principal', t: 'text' },
+    { k: 'fecha_objetivo', l: 'Fecha de la prueba objetivo', t: 'date' },
+    { k: 'notas', l: 'Notas', t: 'area' } ] },
+];
+
+function construirFormPerfil(datos) {
+  const box = $('perfil-form');
+  box.innerHTML = '';
+  GRUPOS_PERFIL.forEach(g => {
+    const h = document.createElement('h3');
+    h.textContent = g.titulo;
+    box.appendChild(h);
+    g.campos.forEach(c => {
+      const lab = document.createElement('label');
+      lab.style.display = 'block';
+      lab.style.margin = '6px 0';
+      lab.append(c.l);
+      let input;
+      if (c.t === 'sel') {
+        input = document.createElement('select');
+        c.o.forEach(v => {
+          const op = document.createElement('option');
+          op.value = v;
+          op.textContent = v || '—';
+          input.appendChild(op);
+        });
+      } else if (c.t === 'area') {
+        input = document.createElement('textarea');
+        input.rows = 2;
+      } else {
+        input = document.createElement('input');
+        input.type = c.t === 'date' ? 'date' : 'text';
+        if (c.t === 'num') input.inputMode = 'decimal';
+      }
+      input.id = 'pf-' + c.k;
+      input.value = (datos && datos[c.k] != null) ? datos[c.k] : '';
+      lab.appendChild(input);
+      box.appendChild(lab);
+    });
+  });
+}
+
+async function cargarPerfilAtleta(atletaId) {
+  const { data, error } = await sb.from('perfil_atleta').select('*')
+    .eq('atleta_id', atletaId).maybeSingle();
+  if (error) return alert(error.message);
+  construirFormPerfil(data || {});
+  $('pf-consentimiento').checked = !!(data && data.consentimiento);
+}
+
+$('btn-perfil-guardar').onclick = async () => {
+  const fila = { atleta_id: miAtleta.id, updated_at: new Date().toISOString() };
+  for (const g of GRUPOS_PERFIL) {
+    for (const c of g.campos) {
+      const raw = $('pf-' + c.k).value.trim();
+      if (raw === '') { fila[c.k] = null; continue; }
+      if (c.t === 'num') {
+        const n = Number(raw.replace(',', '.'));
+        if (Number.isNaN(n)) return alert(`Revisa el campo "${c.l}": debe ser un número.`);
+        fila[c.k] = n;
+      } else {
+        fila[c.k] = raw;
+      }
+    }
+  }
+  fila.consentimiento = $('pf-consentimiento').checked;
+  const { error } = await sb.from('perfil_atleta').upsert(fila, { onConflict: 'atleta_id' });
+  if (error) return alert(error.message);
+  try {
+    const n = await volcarZonas(miAtleta.id, fila);
+    await cargarZonasAtleta();
+    $('perfil-estado').textContent = n ? `Guardado · ${n} zonas actualizadas` : 'Guardado';
+  } catch (e) {
+    return alert('Perfil guardado, pero no se pudieron calcular las zonas: ' + e.message);
+  }
+  setTimeout(() => { $('perfil-estado').textContent = ''; }, 2500);
+};
+
+async function cargarPerfilResumen(atletaId) {
+  const { data, error } = await sb.from('perfil_atleta').select('*')
+    .eq('atleta_id', atletaId).maybeSingle();
+  const box = $('perfil-resumen');
+  box.innerHTML = '';
+  $('ficha-objetivo').textContent = textoObjetivo(data);
+  if (error) { box.textContent = error.message; return; }
+  if (!data) { box.textContent = 'El atleta aún no ha rellenado su perfil.'; return; }
+  GRUPOS_PERFIL.forEach(g => {
+    const h = document.createElement('div');
+    h.style.fontWeight = '700';
+    h.style.marginTop = '8px';
+    h.textContent = g.titulo;
+    box.appendChild(h);
+    g.campos.forEach(c => {
+      const v = data[c.k];
+      if (v === null || v === undefined || v === '') return;
+      const p = document.createElement('div');
+      p.style.fontSize = '14px';
+      p.textContent = `${c.l}: ${v}`;
+      box.appendChild(p);
+    });
+  });
+  const cons = document.createElement('div');
+  cons.className = 'muted';
+  cons.style.marginTop = '8px';
+  cons.textContent = data.consentimiento ? 'Consentimiento de datos de salud: sí' : 'Consentimiento de datos de salud: no';
+  box.appendChild(cons);
+}
+
+async function comprobarAdmin(uid) {
+  const { data } = await sb.from('admins').select('user_id').eq('user_id', uid).limit(1);
+  esAdmin = !!(data && data.length);
+  $('badge-admin').classList.toggle('oculto', !esAdmin);
+}
+
+function modoEntrenador() {
+  modoAtletaActivo = false;
+  mostrarTab('atletas');
+  $('pendiente').classList.add('oculto');
+  comprobarAdmin(miUserId);
+  $('panel').classList.remove('oculto');
+  $('vista-atleta').classList.add('oculto');
+  cargarAtletas();
+  cargarBiblioteca();
+  $('cal-fecha').value = iso(new Date());
+}
+
+const CAMPOS_METRICAS = {
+  'm-peso': 'peso_kg', 'm-altura': 'altura_cm', 'm-anos': 'anos_corriendo',
+  'm-km': 'km_semana', 'm-pulso': 'pulso_reposo', 'm-hrv': 'hrv_ms',
+  'm-fcmax': 'fc_max', 'm-sueno': 'horas_sueno', 'm-dias': 'dias_disponibles',
+  'm-nivel': 'nivel_percibido', 'm-objetivo': 'objetivo',
+  'm-lesiones': 'lesiones', 'm-comentarios': 'comentarios'
+};
+const ETIQUETAS_METRICAS = {
+  peso_kg: 'Peso', altura_cm: 'Altura', anos_corriendo: 'Años corriendo', km_semana: 'Km/semana',
+  pulso_reposo: 'Pulso reposo', hrv_ms: 'VFC', fc_max: 'FC máx', horas_sueno: 'Sueño',
+  dias_disponibles: 'Días/semana', nivel_percibido: 'Nivel percibido', objetivo: 'Objetivo',
+  lesiones: 'Lesiones', comentarios: 'Comentarios'
+};
+
+async function cargarMetricasAtleta(atletaId) {
+  const { data } = await sb.from('metricas').select('*')
+    .eq('atleta_id', atletaId).order('fecha', { ascending: false }).limit(1);
+  if (!data || !data.length) return;
+  const m = data[0];
+  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
+    $(id).value = m[campo] ?? '';
+  });
+  $('m-estado').textContent = `Última actualización: ${m.fecha}`;
+}
+
+$('m-guardar').onclick = async () => {
+  const fila = { atleta_id: miAtleta.id };
+  Object.entries(CAMPOS_METRICAS).forEach(([id, campo]) => {
+    const v = $(id).value.trim();
+    const numerico = ['peso_kg','altura_cm','anos_corriendo','km_semana','pulso_reposo','hrv_ms',
+      'fc_max','horas_sueno','dias_disponibles'].includes(campo);
+    fila[campo] = v === '' ? null : (numerico ? Number(v) : v);
+  });
+  const { error } = await sb.from('metricas').insert(fila);
+  if (error) return alert(error.message);
+  $('m-estado').textContent = `Guardado el ${new Date().toLocaleDateString('es-ES')}`;
+};
+
+async function cargarMetricasTrainer(atletaId) {
+  const box = $('metricas-t');
+  box.textContent = 'Cargando…';
+  const { data, error } = await sb.from('metricas').select('*')
+    .eq('atleta_id', atletaId).order('fecha', { ascending: false }).limit(1);
+  if (error) return box.textContent = error.message;
+  if (!data || !data.length) return box.textContent = 'Este atleta aún no ha rellenado sus métricas.';
+  const m = data[0];
+  const lineas = Object.entries(ETIQUETAS_METRICAS)
+    .filter(([campo]) => m[campo] !== null && m[campo] !== '')
+    .map(([campo, etiqueta]) => `${etiqueta}: ${m[campo]}`);
+  box.textContent = `Actualizado: ${m.fecha}\n` + (lineas.join('\n') || 'Sin datos');
+}
+
+async function modoAtleta(a) {
+  modoAtletaActivo = true;
+  $('pendiente').classList.add('oculto');
+  miAtleta = a;
+  atletaActual = a;
+  $('panel').classList.add('oculto');
+  $('vista-atleta').classList.remove('oculto');
+  $('biblio-atleta').classList.toggle('oculto', !a.ve_biblioteca);
+  if (a.ve_biblioteca) cargarBibliotecaAtleta();
+  semanaInicio = lunesDe(new Date());
+  cargarSemana();
+  activarChat('chat-a', a.id, miUserId);
+  cargarPerfilAtleta(a.id);
+  mostrarTabA('cal');
+  $('m-fecha').value = iso(new Date());
+  cargarTodoAtleta();
+  cargarMetricasAtleta(a.id);
+  iniciarStravaAtleta();
+}
+
+async function cargarBibliotecaAtleta() {
+  const { data, error } = await sb.from('sesiones_biblioteca').select('*').order('nombre');
+  if (error) return alert(error.message);
+  const box = $('biblio-atleta-lista');
+  box.innerHTML = '';
+  data.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'atleta';
+    const t = document.createElement('strong');
+    t.textContent = s.nombre;
+    const m = document.createElement('div');
+    m.className = 'muted';
+    m.textContent = `${s.nivel || ''} · ${s.tipo || ''} · ${s.duracion_min ?? '-'} min`;
+    const x = document.createElement('div');
+    x.style.whiteSpace = 'pre-line';
+    x.textContent = s.descripcion || '';
+    d.append(t, m, x);
+    box.appendChild(d);
+  });
+}
+
+let datosAtleta = { sesiones: [], tests: [], metricas: [], perfil: null };
+
+function mostrarTabA(id) {
+  document.querySelectorAll('.seca').forEach(x => x.classList.toggle('on', x.dataset.sa === id));
+  document.querySelectorAll('#tabs-a .tabt').forEach(x => x.classList.toggle('on', x.dataset.ta === id));
+}
+document.querySelectorAll('#tabs-a .tabt').forEach(b => b.onclick = () => mostrarTabA(b.dataset.ta));
+
+/* ---------- STRAVA ---------- */
+async function llamarStrava(cuerpo) {
+  const { data, error } = await sb.functions.invoke('strava', { body: cuerpo });
+  if (error) {
+    let msg = error.message || String(error);
+    try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* sin detalle */ }
+    throw new Error(msg);
+  }
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+function textoActividad(a) {
+  const km = a.distancia_m ? a.distancia_m / 1000 : 0;
+  const partes = [];
+  if (km) partes.push(km.toFixed(2) + ' km');
+  if (a.duracion_s) partes.push(formatoTiempo(a.duracion_s / 60).replace(':', ' h ') + ' min');
+  if (km && a.duracion_s && /run|walk|hike/i.test(a.tipo || '')) partes.push(formatoTiempo(a.duracion_s / km) + ' /km');
+  if (a.desnivel_m) partes.push('+' + Math.round(a.desnivel_m) + ' m');
+  if (a.fc_media) partes.push(Math.round(a.fc_media) + ' ppm');
+  return partes.join(' · ');
+}
+async function pintarActividades(box, atletaId) {
+  const { data, error } = await sb.from('actividades').select('*').eq('atleta_id', atletaId)
+    .order('inicio', { ascending: false }).limit(40);
+  box.innerHTML = '';
+  if (error) {
+    const pe = document.createElement('p');
+    pe.className = 'muted';
+    pe.textContent = /actividades/.test(error.message) ? 'Falta ejecutar strava.sql en Supabase.' : error.message;
+    box.appendChild(pe);
+    return;
+  }
+  if (!data.length) {
+    const pv = document.createElement('p');
+    pv.className = 'muted';
+    pv.textContent = 'No hay actividades de Strava todavía.';
+    box.appendChild(pv);
+    return;
+  }
+  data.forEach(a => {
+    const fila = document.createElement('div');
+    fila.className = 'act-fila';
+    const tit = document.createElement('b');
+    tit.textContent = `${a.fecha} · ${a.nombre || a.tipo || 'Actividad'}`;
+    const det = document.createElement('div');
+    det.textContent = `${a.tipo || ''} · ${textoActividad(a)}`;
+    const enlace = document.createElement('a');
+    enlace.href = 'https://www.strava.com/activities/' + a.strava_id;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener';
+    enlace.textContent = 'Ver en Strava';
+    det.appendChild(enlace);
+    fila.append(tit, det);
+    box.appendChild(fila);
+  });
+}
+function pintarEstadoStrava() {
+  const con = !!(miAtleta && miAtleta.strava_conectado);
+  $('strava-estado').textContent = con ? 'Tu cuenta de Strava está conectada.' : 'Tu cuenta de Strava no está conectada.';
+  $('btn-strava-conectar').classList.toggle('oculto', con);
+  $('btn-strava-sync').classList.toggle('oculto', !con);
+  $('btn-strava-quitar').classList.toggle('oculto', !con);
+}
+async function iniciarStravaAtleta() {
+  pintarEstadoStrava();
+  const errorStrava = sessionStorage.getItem('strava_error');
+  const code = sessionStorage.getItem('strava_code');
+  sessionStorage.removeItem('strava_error');
+  sessionStorage.removeItem('strava_code');
+  if (errorStrava) alert('No se ha completado la conexión con Strava (has cancelado o denegado el permiso).');
+  if (code) {
+    mostrarTabA('perfil');
+    $('strava-estado').textContent = 'Conectando con Strava y trayendo tus actividades…';
+    try {
+      const r = await llamarStrava({ accion: 'conectar', code });
+      miAtleta.strava_conectado = true;
+      pintarEstadoStrava();
+      $('strava-estado').textContent = `Strava conectado. ${r.actividades} actividades traídas y ${r.marcadas} sesiones marcadas como hechas.`;
+      cargarSemana();
+      cargarTodoAtleta();
+    } catch (e) {
+      pintarEstadoStrava();
+      alert('No se ha podido conectar con Strava: ' + e.message);
+    }
+  } else if (miAtleta.strava_conectado) {
+    // Sincronización silenciosa al entrar
+    llamarStrava({ accion: 'sincronizar' }).then(r => {
+      if (r.actividades) { pintarActividades($('actividades-a'), miAtleta.id); if (r.marcadas) { cargarSemana(); cargarTodoAtleta(); } }
+    }).catch(() => {});
+  }
+  pintarActividades($('actividades-a'), miAtleta.id);
+}
+$('btn-strava-conectar').onclick = () => {
+  if (!/^\d+$/.test(STRAVA_CLIENT_ID)) return alert('La conexión con Strava todavía no está configurada. Avisa a tu entrenador.');
+  const vuelta = location.origin + location.pathname;
+  location.href = 'https://www.strava.com/oauth/authorize?client_id=' + STRAVA_CLIENT_ID +
+    '&redirect_uri=' + encodeURIComponent(vuelta) +
+    '&response_type=code&approval_prompt=auto&scope=read,activity:read_all&state=strava';
+};
+$('btn-strava-sync').onclick = async () => {
+  $('strava-estado').textContent = 'Sincronizando…';
+  try {
+    const r = await llamarStrava({ accion: 'sincronizar' });
+    $('strava-estado').textContent = `Sincronizado: ${r.actividades} actividades de los últimos 30 días, ${r.marcadas} sesiones marcadas como hechas.`;
+    pintarActividades($('actividades-a'), miAtleta.id);
+    cargarSemana();
+    cargarTodoAtleta();
+  } catch (e) {
+    $('strava-estado').textContent = '';
+    alert(e.message);
+    pintarEstadoStrava();
+  }
+};
+$('btn-strava-quitar').onclick = async () => {
+  if (!confirm('¿Desconectar Strava? Se borrarán de la app las actividades traídas. Las sesiones ya marcadas como hechas se conservan.')) return;
+  try {
+    await llamarStrava({ accion: 'desconectar' });
+    miAtleta.strava_conectado = false;
+    pintarEstadoStrava();
+    pintarActividades($('actividades-a'), miAtleta.id);
+  } catch (e) { alert(e.message); }
+};
+$('btn-strava-sync-t').onclick = async () => {
+  if (!atletaActual) return;
+  const btn = $('btn-strava-sync-t');
+  btn.disabled = true;
+  btn.textContent = 'Sincronizando…';
+  try {
+    const r = await llamarStrava({ accion: 'sincronizar', atleta_id: atletaActual.id });
+    alert(`${r.actividades} actividades de los últimos 30 días. ${r.marcadas} sesiones marcadas como hechas.`);
+    pintarActividades($('actividades-t'), atletaActual.id);
+    cargarSemana();
+  } catch (e) { alert(e.message); }
+  btn.disabled = false;
+  btn.textContent = 'Sincronizar Strava de este atleta';
+};
+
+/* ---------- BORRADO DE ENTRENAMIENTOS ---------- */
+let sesionesBorrado = [];
+async function cargarBloques() {
+  const box = $('bloques-lista');
+  if (!atletaActual) return;
+  const id = atletaActual.id;
+  const [rb, rs] = await Promise.all([
+    sb.from('bloques').select('*').eq('atleta_id', id).order('fecha_inicio'),
+    sb.from('sesiones_planificadas').select('id, bloque_id, fecha, estado').eq('atleta_id', id)
+  ]);
+  if (!atletaActual || atletaActual.id !== id) return;
+  box.innerHTML = '';
+  if (rb.error || rs.error) { box.textContent = (rb.error || rs.error).message; return; }
+  sesionesBorrado = rs.data || [];
+  const bloques = rb.data || [];
+  const info = document.createElement('div');
+  info.textContent = `${sesionesBorrado.length} sesiones en el calendario de ${atletaActual.nombre}.` + (bloques.length ? ' Planes aplicados:' : ' No hay planes aplicados.');
+  box.appendChild(info);
+  bloques.forEach(b => {
+    const n = sesionesBorrado.filter(x => x.bloque_id === b.id).length;
+    const fila = document.createElement('div');
+    fila.className = 'fila-bloque';
+    const txt = document.createElement('span');
+    txt.textContent = `${b.nombre || 'Plan'} · ${b.fecha_inicio || '?'} → ${b.fecha_fin || '?'} · ${n} sesiones`;
+    const btn = document.createElement('button');
+    btn.className = 'danger';
+    btn.type = 'button';
+    btn.textContent = 'Borrar este plan';
+    btn.onclick = async () => {
+      if (!confirm(`¿Borrar «${b.nombre || 'Plan'}» y sus ${n} sesiones del calendario de ${atletaActual.nombre}? Se borran también las ya hechas. No se puede deshacer.`)) return;
+      const r1 = await sb.from('sesiones_planificadas').delete().eq('bloque_id', b.id);
+      if (r1.error) return alert(r1.error.message);
+      const r2 = await sb.from('bloques').delete().eq('id', b.id);
+      if (r2.error) return alert(r2.error.message);
+      trasBorrar();
+    };
+    fila.append(txt, btn);
+    box.appendChild(fila);
+  });
+}
+function trasBorrar() {
+  cargarBloques();
+  cargarSemana();
+  cargarFormaTrainer(atletaActual.id);
+  cargarAtletas();
+}
+async function limpiarBloquesVacios() {
+  const { data: restantes } = await sb.from('sesiones_planificadas').select('bloque_id').eq('atleta_id', atletaActual.id);
+  const usados = new Set((restantes || []).map(x => x.bloque_id).filter(Boolean));
+  const { data: bloques } = await sb.from('bloques').select('id').eq('atleta_id', atletaActual.id);
+  const vacios = (bloques || []).map(b => b.id).filter(id => !usados.has(id));
+  if (vacios.length) await sb.from('bloques').delete().in('id', vacios);
+}
+$('btn-borrar-rango').onclick = async () => {
+  const d = $('borrar-desde').value, h = $('borrar-hasta').value;
+  if (!d || !h) return alert('Elige las dos fechas.');
+  if (d > h) return alert('La primera fecha debe ser anterior a la segunda.');
+  await cargarBloques();
+  const n = sesionesBorrado.filter(x => x.fecha >= d && x.fecha <= h).length;
+  if (!n) return alert('No hay sesiones entre esas fechas.');
+  if (!confirm(`¿Borrar ${n} sesiones de ${atletaActual.nombre} entre el ${d} y el ${h}? Incluye las ya hechas. No se puede deshacer.`)) return;
+  const { error } = await sb.from('sesiones_planificadas').delete().eq('atleta_id', atletaActual.id).gte('fecha', d).lte('fecha', h);
+  if (error) return alert(error.message);
+  await limpiarBloquesVacios();
+  trasBorrar();
+};
+$('btn-borrar-futuras').onclick = async () => {
+  const hoy = iso(new Date());
+  await cargarBloques();
+  const n = sesionesBorrado.filter(x => x.fecha >= hoy && x.estado !== 'hecha').length;
+  if (!n) return alert('No quedan sesiones por hacer desde hoy.');
+  if (!confirm(`¿Borrar las ${n} sesiones de ${atletaActual.nombre} que quedan por hacer desde hoy? Las ya hechas y el historial se conservan. No se puede deshacer.`)) return;
+  const { error } = await sb.from('sesiones_planificadas').delete().eq('atleta_id', atletaActual.id).gte('fecha', hoy).neq('estado', 'hecha');
+  if (error) return alert(error.message);
+  await limpiarBloquesVacios();
+  trasBorrar();
+};
+$('btn-borrar-todo').onclick = async () => {
+  await cargarBloques();
+  const n = sesionesBorrado.length;
+  if (!n) return alert('El calendario ya está vacío.');
+  if (!confirm(`¿Borrar TODO el calendario de ${atletaActual.nombre}? Son ${n} sesiones, incluidas las hechas, con sus notas y esfuerzos. No se puede deshacer.`)) return;
+  if (prompt('Para confirmar, escribe BORRAR') !== 'BORRAR') return alert('No se ha borrado nada.');
+  const r1 = await sb.from('sesiones_planificadas').delete().eq('atleta_id', atletaActual.id);
+  if (r1.error) return alert(r1.error.message);
+  const r2 = await sb.from('bloques').delete().eq('atleta_id', atletaActual.id);
+  if (r2.error) return alert(r2.error.message);
+  trasBorrar();
+};
+
+/* ---------- IMPORTAR DESDE EXCEL / GOOGLE SHEETS ---------- */
+let libXLSX = null;
+let filasImportar = [];
+async function cargarXLSX() {
+  if (!libXLSX) libXLSX = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs');
+  return libXLSX;
+}
+function sinAcentos(t) {
+  return String(t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+function fechaDeCelda(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number') {
+    if (v < 20000 || v > 80000) return null;
+    return new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 864e5).toISOString().slice(0, 10);
+  }
+  const t = String(v).trim();
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    const a = m[3].length === 2 ? '20' + m[3] : m[3];
+    if (Number(m[2]) > 12 || Number(m[1]) > 31) return null;
+    return `${a}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  return null;
+}
+function tipoDeCelda(v) {
+  const t = sinAcentos(v);
+  if (!t) return 'otro';
+  if (t.includes('serie') || t.includes('interval') || t.includes('cuesta') || t.includes('fartlek')) return 'series';
+  if (t.includes('tirada') || t.includes('largo') || t.includes('larga')) return 'tirada';
+  if (t.includes('rodaje') || t.includes('suave') || t.includes('trote') || t.includes('carrera continua')) return 'rodaje';
+  if (t.includes('fuerza') || t.includes('gimnasio') || t.includes('gym')) return 'fuerza';
+  if (t.includes('bici') || t.includes('ciclismo')) return 'bici';
+  if (t.includes('test')) return 'test';
+  return 'otro';
+}
+function nivelDeCelda(v) {
+  const t = sinAcentos(v);
+  if (t.startsWith('prin') || t.startsWith('inic')) return 'principiante';
+  if (t.startsWith('inter') || t.startsWith('medi')) return 'intermedio';
+  if (t.startsWith('avan')) return 'avanzado';
+  return null;
+}
+/* Lee todas las hojas del libro. Busca la fila de títulos (la que tiene «Fecha» o «Día»)
+   aunque haya filas de encabezado por encima, y conserva TODAS las columnas. */
+function filasDeLibro(X, libro) {
+  const out = [];
+  libro.SheetNames.forEach(nombreHoja => {
+    const m = X.utils.sheet_to_json(libro.Sheets[nombreHoja], { header: 1, defval: '', raw: true });
+    // Texto tal como se ve en la hoja (para ritmos tipo 4:10, que Excel guarda como hora)
+    const visto = X.utils.sheet_to_json(libro.Sheets[nombreHoja], { header: 1, defval: '', raw: false });
+    if (!m.length) return;
+    let cab = m.slice(0, 20).findIndex(f => f.some(c => /^(fecha|dia|date)\b/.test(sinAcentos(c))));
+    if (cab < 0) cab = m.findIndex(f => f.filter(c => String(c).trim() !== '').length >= 2);
+    if (cab < 0) return;
+    const titulos = m[cab].map(c => String(c ?? '').trim());
+    m.slice(cab + 1).forEach((f, n) => {
+      const pares = [];
+      const fv = visto[cab + 1 + n] || [];
+      f.forEach((v, i) => {
+        if (String(v ?? '').trim() === '') return;
+        const esFecha = /^(fecha|dia|date)\b/.test(sinAcentos(titulos[i]));
+        pares.push([titulos[i] || '', esFecha || fv[i] === undefined || fv[i] === '' ? v : fv[i]]);
+      });
+      if (pares.length) out.push(pares);
+    });
+  });
+  return out;
+}
+function interpretarFilas(filas) {
+  const es = (k, ...nombres) => nombres.some(n => sinAcentos(k).startsWith(n));
+  const hayFechas = filas.some(pares => pares.some(([k, v]) => es(k, 'fecha', 'dia', 'date') && fechaDeCelda(v)));
+  const todas = [];
+  filas.forEach(pares => {
+    let fecha = null, nombre = '', tipoTxt = '', dur = null, nivel = null;
+    const principal = [], extra = [];
+    pares.forEach(([k, v]) => {
+      const txt = String(v).trim();
+      if (es(k, 'fecha', 'dia', 'date') && fechaDeCelda(v)) fecha = fechaDeCelda(v);
+      else if (es(k, 'nombre', 'sesion', 'titulo')) nombre = txt;
+      else if (es(k, 'tipo')) tipoTxt = txt;
+      else if (es(k, 'duracion', 'minutos', 'min', 'tiempo') && Number.isFinite(parseInt(txt, 10))) dur = parseInt(txt, 10);
+      else if (es(k, 'nivel') && nivelDeCelda(v)) nivel = nivelDeCelda(v);
+      else if (es(k, 'descripcion', 'entrenamiento', 'detalle')) principal.push(txt);
+      else extra.push((k ? k + ': ' : '') + txt);
+    });
+    const texto = [...principal, ...extra].join('\n');
+    if (!nombre && !tipoTxt && !texto) return;
+    // Fila sin fecha debajo de una sesión con fecha: es la continuación de esa sesión
+    if (hayFechas && !fecha && todas.length && todas[todas.length - 1].fecha) {
+      const ant = todas[todas.length - 1];
+      const linea = [nombre, tipoTxt, texto].filter(Boolean).join(' · ');
+      ant.desc = ant.desc ? ant.desc + '\n' + linea : linea;
+      return;
+    }
+    todas.push({
+      fecha,
+      tipo: tipoDeCelda(tipoTxt || nombre || texto),
+      nombre: nombre || tipoTxt || (principal[0] || texto).split('\n')[0].slice(0, 60) || 'Sesión',
+      desc: texto,
+      duracion_min: dur,
+      nivel
+    });
+  });
+  todas.forEach(t => {
+    if (!t.nombre) t.nombre = 'Sesión';
+    if (t.desc === t.nombre) t.desc = '';
+    else if (t.desc.startsWith(t.nombre + '\n')) t.desc = t.desc.slice(t.nombre.length + 1);
+  });
+  todas.sort((a, b) => String(a.fecha || '9').localeCompare(String(b.fecha || '9')));
+  return { todas, validas: todas.filter(x => x.fecha) };
+}
+function limpiarImportacion() {
+  filasImportar = [];
+  $('imp-archivo').value = '';
+  $('imp-vista').innerHTML = '';
+  $('imp-destinos').classList.add('oculto');
+}
+$('imp-archivo').onchange = async (e) => {
+  const archivo = e.target.files[0];
+  const vista = $('imp-vista');
+  filasImportar = [];
+  $('imp-destinos').classList.add('oculto');
+  vista.innerHTML = '';
+  if (!archivo) return;
+  const aviso = (txt) => {
+    const pe = document.createElement('p');
+    pe.className = 'msg err';
+    pe.style.display = 'block';
+    pe.textContent = txt;
+    vista.appendChild(pe);
+  };
+  try {
+    const X = await cargarXLSX();
+    const esCsv = /\.csv$/i.test(archivo.name);
+    const libro = esCsv
+      ? X.read(await archivo.text(), { type: 'string', raw: true })
+      : X.read(await archivo.arrayBuffer());
+    const { todas, validas } = interpretarFilas(filasDeLibro(X, libro));
+    if (!todas.length) {
+      return aviso('No he encontrado sesiones. Revisa que haya una fila de títulos (Fecha, Tipo, Nombre, Descripción…) y filas con contenido debajo.');
+    }
+    filasImportar = todas;
+    const res = document.createElement('p');
+    res.textContent = `${todas.length} sesiones encontradas; ${validas.length} con fecha válida` +
+      (validas.length ? ` (del ${validas[0].fecha} al ${validas[validas.length - 1].fecha}).` : '.') +
+      (todas.length > 8 ? ' Se muestran las 8 primeras.' : '') +
+      (validas.length < todas.length ? ' Las que no tienen fecha solo pueden guardarse en la biblioteca.' : '');
+    const tabla = document.createElement('table');
+    tabla.className = 'imp-tabla';
+    tabla.innerHTML = '<tr><th>Fecha</th><th>Tipo</th><th>Sesión</th><th>Min</th></tr>';
+    todas.slice(0, 8).forEach(v => {
+      const tr = document.createElement('tr');
+      [v.fecha || 'sin fecha', v.tipo, v.nombre + (v.desc ? ' — ' + v.desc : ''), v.duracion_min ?? '-'].forEach(c => {
+        const td = document.createElement('td');
+        td.textContent = c;
+        td.style.whiteSpace = 'pre-line';
+        tr.appendChild(td);
+      });
+      tabla.appendChild(tr);
+    });
+    vista.append(res, tabla);
+    $('imp-destinos').classList.remove('oculto');
+  } catch (err) {
+    aviso('No he podido leer el archivo: ' + (err.message || err));
+  }
+};
+$('imp-cargar').onclick = async () => {
+  const atletaId = $('imp-atleta').value;
+  if (!atletaId) return alert('No hay atletas. Añade uno en la pestaña Atletas.');
+  const conFecha = filasImportar.filter(x => x.fecha);
+  if (!conFecha.length) return alert('Ninguna sesión del archivo tiene fecha válida, así que no se puede poner en el calendario.');
+  const nombreAtleta = $('imp-atleta').selectedOptions[0].textContent;
+  if (!confirm(`¿Cargar ${conFecha.length} sesiones en el calendario de ${nombreAtleta}?`)) return;
+  const { data: bloque, error: eb } = await sb.from('bloques').insert({
+    atleta_id: atletaId, nombre: `Importado de Excel el ${iso(new Date())}`,
+    fecha_inicio: conFecha[0].fecha, fecha_fin: conFecha[conFecha.length - 1].fecha
+  }).select().single();
+  if (eb) return alert(eb.message);
+  const filas = conFecha.map(v => ({
+    atleta_id: atletaId, bloque_id: bloque.id, fecha: v.fecha, tipo: v.tipo,
+    descripcion: v.nombre + (v.desc ? ' — ' + v.desc : ''), duracion_min: v.duracion_min
+  }));
+  const { error } = await sb.from('sesiones_planificadas').insert(filas);
+  if (error) return alert(error.message);
+  alert(`${filas.length} sesiones cargadas en el calendario de ${nombreAtleta}, desde el ${filas[0].fecha}.`);
+  if (atletaActual && atletaActual.id === atletaId) {
+    semanaInicio = lunesDe(new Date(filas[0].fecha + 'T00:00:00'));
+    mesActual = new Date(filas[0].fecha + 'T00:00:00');
+    cargarSemana();
+    cargarBloques();
+  }
+  cargarAtletas();
+};
+$('imp-biblio').onclick = async () => {
+  if (!filasImportar.length) return;
+  const vistos = new Set();
+  const unicas = filasImportar.filter(v => {
+    const k = sinAcentos(v.nombre) + '|' + sinAcentos(v.desc);
+    if (vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+  if (!confirm(`¿Guardar ${unicas.length} sesiones en la biblioteca?`)) return;
+  const filas = unicas.map(v => ({
+    entrenador_id: miUserId, nombre: v.nombre, nivel: v.nivel || $('imp-nivel').value,
+    tipo: v.tipo === 'test' ? 'otro' : v.tipo, duracion_min: v.duracion_min, descripcion: v.desc || null
+  }));
+  const { error } = await sb.from('sesiones_biblioteca').insert(filas);
+  if (error) return alert(error.message);
+  alert(`${filas.length} sesiones guardadas en la biblioteca.`);
+  cargarBiblioteca();
+};
+$('btn-plantilla').onclick = async () => {
+  try {
+    const X = await cargarXLSX();
+    const lunes = lunesDe(new Date());
+    const f = n => { const d = sumarDias(lunes, n); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; };
+    const hoja = X.utils.aoa_to_sheet([
+      ['Fecha', 'Tipo', 'Nombre', 'Descripción', 'Duración (min)', 'Nivel'],
+      [f(1), 'Series', 'Series 6x800', 'Calentamiento 15 min, 6x800 m a ritmo de 5 km con 2 min de recuperación', 60],
+      [f(3), 'Rodaje', 'Rodaje suave', 'Ritmo de conversación', 45],
+      [f(5), 'Tirada larga', 'Tirada larga', 'Ritmo cómodo, últimos 15 min algo más rápido', 80]
+    ]);
+    hoja['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 60 }, { wch: 14 }];
+    const libro = X.utils.book_new();
+    X.utils.book_append_sheet(libro, hoja, 'Entrenamiento');
+    X.writeFile(libro, 'plantilla-entrenamiento.xlsx');
+  } catch (err) {
+    alert('No se ha podido crear la plantilla: ' + (err.message || err));
+  }
+};
+
+/* ---------- PASOS DE SESIÓN ---------- */
+let pasosForm = [];
+let sesionTeniaPasos = false;
+
+function duracionPasos(pasos) {
+  if (!pasos || !pasos.length) return null;
+  let total = 0;
+  for (const ps of pasos) {
+    if (ps.unidad !== 'min' || !ps.cantidad) return null;
+    const r = ps.rep || 1;
+    total += r * ps.cantidad + (r - 1) * (ps.rec || 0);
+  }
+  return Math.round(total);
+}
+function pasosLimpios() {
+  const out = pasosForm.filter(ps => ps.cantidad).map(ps => ({
+    nombre: (ps.nombre || '').trim(), rep: ps.rep || 1, cantidad: ps.cantidad,
+    unidad: ps.unidad || 'min', zona: ps.zona || null, rec: ps.rec || null
+  }));
+  return out.length ? out : null;
+}
+function pintarPasosForm() {
+  const box = $('s-pasos');
+  box.innerHTML = '';
+  pasosForm.forEach((ps, i) => {
+    const row = document.createElement('div');
+    row.className = 'paso-row';
+    const alCambiar = () => { const t = duracionPasos(pasosForm); if (t) $('s-duracion').value = t; };
+    const campo = (k, tipo, ph) => {
+      const el = document.createElement('input');
+      el.type = tipo;
+      el.placeholder = ph;
+      el.title = ph;
+      if (tipo === 'number') { el.min = 0; el.step = 'any'; }
+      el.value = ps[k] ?? '';
+      el.oninput = () => { ps[k] = tipo === 'number' ? (el.value === '' ? null : Number(el.value)) : el.value; alCambiar(); };
+      return el;
+    };
+    const lista = (k, opciones) => {
+      const el = document.createElement('select');
+      opciones.forEach(([v, t]) => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = t;
+        if (String(ps[k] ?? '') === String(v)) o.selected = true;
+        el.appendChild(o);
+      });
+      el.onchange = () => { ps[k] = k === 'zona' ? (el.value ? Number(el.value) : null) : el.value; alCambiar(); };
+      return el;
+    };
+    const quitar = document.createElement('button');
+    quitar.type = 'button';
+    quitar.className = 'danger';
+    quitar.textContent = '✕';
+    quitar.onclick = () => { pasosForm.splice(i, 1); pintarPasosForm(); };
+    row.append(
+      campo('nombre', 'text', 'Paso (ej. Calentamiento)'),
+      campo('rep', 'number', 'Repeticiones'),
+      campo('cantidad', 'number', 'Cantidad'),
+      lista('unidad', [['min', 'min'], ['m', 'm'], ['km', 'km']]),
+      lista('zona', [['', 'Zona'], [1, 'Z1'], [2, 'Z2'], [3, 'Z3'], [4, 'Z4'], [5, 'Z5']]),
+      campo('rec', 'number', 'Recup. (min)'),
+      quitar
+    );
+    box.appendChild(row);
+  });
+}
+$('btn-paso').onclick = () => {
+  pasosForm.push({ nombre: '', rep: 1, cantidad: null, unidad: 'min', zona: null, rec: null });
+  pintarPasosForm();
+};
+
+async function zonasDe(atletaId) {
+  const { data } = await sb.from('zonas').select('*').eq('atleta_id', atletaId);
+  return data || [];
+}
+function rangoZona(n, zonas) {
+  const partes = [];
+  const r = zonas.find(z => z.tipo === 'ritmo' && Number(z.zona) === Number(n));
+  const f = zonas.find(z => z.tipo === 'fc' && Number(z.zona) === Number(n));
+  if (r) partes.push(`${formatoTiempo(r.minimo)}–${formatoTiempo(r.maximo)} /km`);
+  if (f) partes.push(`${f.minimo}–${f.maximo} ppm`);
+  return partes.length ? ` (${partes.join(' · ')})` : '';
+}
+function textoPaso(ps, zonas) {
+  const r = ps.rep || 1;
+  let t = (ps.nombre ? ps.nombre + ': ' : '') + (r > 1 ? `${r} × ` : '') + `${ps.cantidad} ${ps.unidad || 'min'}`;
+  if (ps.zona) t += ` en Z${ps.zona}` + rangoZona(ps.zona, zonas || []);
+  if (ps.rec && r > 1) t += ` · recuperación ${ps.rec} min`;
+  return t;
+}
+function pintarPasos(el, pasos, zonas) {
+  el.innerHTML = '';
+  if (!Array.isArray(pasos) || !pasos.length) return;
+  const ol = document.createElement('ol');
+  ol.className = 'pasos-lista';
+  pasos.forEach(ps => {
+    const li = document.createElement('li');
+    li.textContent = textoPaso(ps, zonas);
+    ol.appendChild(li);
+  });
+  el.appendChild(ol);
+}
+
+/* ---------- DETALLE DE SESIÓN (ENTRENADOR) ---------- */
+async function abrirDetalleSesion(p) {
+  const partes = (p.descripcion || p.tipo || 'Sesión').split(' — ');
+  const c = cumplimiento(p);
+  $('ms-titulo').textContent = partes[0];
+  $('ms-meta').textContent = `${p.fecha} · ${p.tipo || ''} · plan ${p.duracion_min ?? '-'} min` + (c ? ` · ${c.texto}` : '');
+  $('ms-texto').textContent = partes.slice(1).join(' — ');
+  $('ms-atleta').textContent = `Estado: ${p.estado || 'pendiente'} · ${p.duracion_real_min ?? '-'} min reales · ${p.km_reales ?? '-'} km · esfuerzo ${p.rpe ?? '-'}` +
+    (p.notas_atleta ? `\nNotas: ${p.notas_atleta}` : '\nSin notas.');
+  $('ms-comentario').value = p.comentario_entrenador || '';
+  $('ms-pasos').innerHTML = '';
+  $('modal-sesion').classList.remove('oculto');
+  $('ms-guardar').onclick = async () => {
+    const { error } = await sb.from('sesiones_planificadas')
+      .update({ comentario_entrenador: $('ms-comentario').value.trim() || null }).eq('id', p.id);
+    if (error) return alert(error.message);
+    $('modal-sesion').classList.add('oculto');
+    cargarSemana();
+  };
+  pintarPasos($('ms-pasos'), p.pasos, await zonasDe(p.atleta_id));
+}
+$('ms-cerrar').onclick = () => $('modal-sesion').classList.add('oculto');
+
+/* ---------- CONDICIÓN, FATIGA Y FORMA ---------- */
+function dibujarForma(box, sesiones) {
+  box.innerHTML = '';
+  const hoy = new Date();
+  const hoyIso = iso(hoy);
+  const porDia = {};
+  (sesiones || []).forEach(p => { if (p.fecha <= hoyIso) porDia[p.fecha] = (porDia[p.fecha] || 0) + cargaSesion(p); });
+  let ctl = 0, atl = 0;
+  const pts = [];
+  for (let k = 83; k >= 0; k--) {
+    const c = porDia[iso(sumarDias(hoy, -k))] || 0;
+    ctl += (c - ctl) / 42;
+    atl += (c - atl) / 7;
+    pts.push({ ctl, atl, tsb: ctl - atl });
+  }
+  if (!pts.some(x => x.atl > 0)) {
+    const m = document.createElement('p');
+    m.className = 'muted';
+    m.textContent = 'Todavía no hay sesiones con el esfuerzo registrado. El gráfico aparecerá cuando las haya.';
+    box.appendChild(m);
+    return;
+  }
+  const W = 600, H = 200, P = 6;
+  const max = Math.max(...pts.map(x => Math.max(x.ctl, x.atl)), 1);
+  const min = Math.min(0, ...pts.map(x => x.tsb));
+  const X = i => P + (i / (pts.length - 1)) * (W - 2 * P);
+  const Y = v => P + (1 - (v - min) / (max - min)) * (H - 2 * P);
+  const linea = (k, color, ancho) => `<polyline fill="none" stroke="${color}" stroke-width="${ancho}" points="${pts.map((x, i) => X(i).toFixed(1) + ',' + Y(x[k]).toFixed(1)).join(' ')}"/>`;
+  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:rgba(255,255,255,.6);border-radius:8px" role="img" aria-label="Condición, fatiga y forma de las últimas 12 semanas">
+    <line x1="${P}" x2="${W - P}" y1="${Y(0)}" y2="${Y(0)}" stroke="#888" stroke-dasharray="4 4"/>
+    ${linea('tsb', '#e0a800', 2)}${linea('atl', '#d32f2f', 2)}${linea('ctl', '#1976d2', 3)}</svg>`;
+  const u = pts[pts.length - 1];
+  const rel = u.ctl > 0 ? u.tsb / u.ctl : 0;
+  const lectura = rel < -0.3 ? 'Fatiga acumulada alta: conviene descargar.'
+    : rel < -0.1 ? 'En fase de carga: está asimilando trabajo.'
+    : rel <= 0.1 ? 'Equilibrado.'
+    : 'Fresco: listo para competir o para volver a cargar.';
+  box.innerHTML = svg +
+    `<div class="forma-leyenda"><span><i style="background:#1976d2"></i>Condición (42 días): ${Math.round(u.ctl)}</span>` +
+    `<span><i style="background:#d32f2f"></i>Fatiga (7 días): ${Math.round(u.atl)}</span>` +
+    `<span><i style="background:#e0a800"></i>Forma: ${Math.round(u.tsb)}</span></div>`;
+  const pl = document.createElement('p');
+  pl.textContent = lectura;
+  box.appendChild(pl);
+}
+async function cargarFormaTrainer(atletaId) {
+  const desde = iso(sumarDias(new Date(), -84));
+  const { data } = await sb.from('sesiones_planificadas').select('*').eq('atleta_id', atletaId).gte('fecha', desde);
+  if (atletaActual && atletaActual.id === atletaId) dibujarForma($('forma-t'), data || []);
+}
+
+/* ---------- OBJETIVO ---------- */
+function semanasAObjetivo(perfil) {
+  if (!perfil || !perfil.fecha_objetivo) return null;
+  const dias = Math.round((new Date(String(perfil.fecha_objetivo).slice(0, 10) + 'T00:00:00') - new Date(iso(new Date()) + 'T00:00:00')) / 864e5);
+  return { dias, semanas: Math.floor(dias / 7) };
+}
+function textoObjetivo(perfil) {
+  const f = semanasAObjetivo(perfil);
+  if (!f) return '';
+  const nombre = perfil.objetivo || 'carrera';
+  const fecha = String(perfil.fecha_objetivo).slice(0, 10);
+  if (f.dias < 0) return `Objetivo: ${nombre} · fue el ${fecha}`;
+  const fase = f.semanas > 12 ? 'base' : f.semanas >= 4 ? 'específica' : f.semanas >= 1 ? 'puesta a punto' : 'semana de carrera';
+  return `Objetivo: ${nombre} · ${fecha} · faltan ${f.semanas} semanas (${f.dias} días) · fase ${fase}`;
+}
+$('btn-plan-objetivo').onclick = async () => {
+  const atletaId = $('plan-atleta').value;
+  if (!atletaId) return alert('Elige un atleta.');
+  const { data } = await sb.from('perfil_atleta').select('objetivo, fecha_objetivo').eq('atleta_id', atletaId).maybeSingle();
+  if (!data || !data.fecha_objetivo) return alert('Este atleta no tiene fecha objetivo en su perfil.');
+  const carrera = new Date(String(data.fecha_objetivo).slice(0, 10) + 'T00:00:00');
+  const inicio = sumarDias(lunesDe(carrera), -77);
+  $('plan-fecha').value = iso(inicio);
+  alert(`El plan de 12 semanas empezará el ${iso(inicio)} y su última semana será la del objetivo (${String(data.fecha_objetivo).slice(0, 10)}). Revisa la fecha y pulsa «Aplicar plan al calendario».`);
+};
+
+/* Cumplimiento, como en TrainingPeaks: verde 80-120 % de lo planificado,
+   amarillo 50-79 % o 121-150 %, naranja fuera de eso, rojo sin hacer. */
+function cumplimiento(p) {
+  if (p.estado === 'omitida') return { color: '#c62828', texto: 'omitida' };
+  if (p.estado === 'hecha') {
+    if (p.duracion_real_min && p.duracion_min) {
+      const r = p.duracion_real_min / p.duracion_min;
+      if (r >= 0.8 && r <= 1.2) return { color: '#2e7d32', texto: 'hecha según el plan' };
+      if (r >= 0.5 && r <= 1.5) return { color: '#f9a825', texto: 'parcial o de más' };
+      return { color: '#ef6c00', texto: 'muy distinta de lo planificado' };
+    }
+    return { color: '#2e7d32', texto: 'hecha' };
+  }
+  if (p.fecha < iso(new Date())) return { color: '#c62828', texto: 'sin hacer' };
+  return null;
+}
+function ponerPunto(el, p) {
+  const c = cumplimiento(p);
+  if (!c) return;
+  const i = document.createElement('i');
+  i.className = 'punto';
+  i.style.background = c.color;
+  i.title = c.texto;
+  el.prepend(i);
+}
+
+/* Panel del entrenador: resumen de la semana de cada atleta */
+async function cargarPanelAtletas(atletas) {
+  const hoy = iso(new Date());
+  const lunes = lunesDe(new Date());
+  const desde = iso(sumarDias(lunes, -21));
+  const hasta = iso(sumarDias(lunes, 6));
+  const hace7 = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [rs, rm, rp] = await Promise.all([
+    sb.from('sesiones_planificadas').select('*').gte('fecha', desde).lte('fecha', hasta),
+    sb.from('mensajes').select('atleta_id, autor_id, created_at').gte('created_at', hace7),
+    sb.from('perfil_atleta').select('atleta_id, objetivo, fecha_objetivo')
+  ]);
+  const perfiles = rp.data || [];
+  if (rs.error) return;
+  const sesiones = rs.data || [];
+  const mensajes = rm.data || [];
+  const lunesIso = iso(lunes);
+  atletas.forEach(a => {
+    const box = document.querySelector(`[data-chips="${a.id}"]`);
+    if (!box) return;
+    box.innerHTML = '';
+    const chip = (txt, cls) => {
+      const c = document.createElement('span');
+      c.className = 'chip' + (cls ? ' ' + cls : '');
+      c.textContent = txt;
+      box.appendChild(c);
+    };
+    if (!a.entrenador_id) chip('sin asignar', 'aviso');
+    const mias = sesiones.filter(p => p.atleta_id === a.id);
+    const semana = mias.filter(p => p.fecha >= lunesIso);
+    const hechas = semana.filter(p => p.estado === 'hecha').length;
+    if (!semana.length) chip('sin sesiones esta semana', 'aviso');
+    else chip(`esta semana ${hechas}/${semana.length} hechas`, hechas === semana.length ? 'ok' : '');
+    const hace7dias = iso(sumarDias(new Date(), -7));
+    const falladas = mias.filter(p => p.fecha >= hace7dias && p.fecha < hoy && p.estado !== 'hecha').length;
+    if (falladas) chip(`${falladas} sin hacer en 7 días`, falladas >= 2 ? 'mal' : 'aviso');
+    const cargaDe = (ini, fin) => mias.filter(p => p.fecha >= ini && p.fecha <= fin).reduce((t, p) => t + cargaSesion(p), 0);
+    const cargaSem = cargaDe(lunesIso, hasta);
+    const previas = [1, 2, 3].map(k => cargaDe(iso(sumarDias(lunes, -7 * k)), iso(sumarDias(lunes, -7 * k + 6))));
+    const media = previas.reduce((t, x) => t + x, 0) / 3;
+    if (cargaSem) chip(`carga ${Math.round(cargaSem)}`, media > 0 && cargaSem > media * 1.5 ? 'mal' : '');
+    if (media > 0 && cargaSem > media * 1.5) chip('carga alta frente a sus 3 semanas previas', 'mal');
+    const ultima = mias.filter(p => p.estado === 'hecha').map(p => p.fecha).sort().pop();
+    if (ultima) chip(`última hecha ${ultima}`);
+    const suyos = mensajes.filter(m => m.atleta_id === a.id && m.autor_id !== miUserId)
+      .map(m => m.created_at).sort().pop();
+    if (suyos) chip(`te escribió el ${suyos.slice(0, 10)}`, 'info');
+    const fo = semanasAObjetivo(perfiles.find(x => x.atleta_id === a.id));
+    if (fo && fo.dias >= 0) chip(`objetivo en ${fo.semanas} sem`, fo.semanas <= 3 ? 'aviso' : '');
+  });
+}
+
+function cargaSesion(p) {
+  return p.rpe ? (Number(p.duracion_real_min || p.duracion_min) || 0) * p.rpe : 0;
+}
+function fechaCorta(d) {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function cargarTodoAtleta() {
+  if (!miAtleta) return;
+  const hoy = new Date();
+  const desde = iso(sumarDias(lunesDe(hoy), -84));
+  const [ses, tst, met, per] = await Promise.all([
+    sb.from('sesiones_planificadas').select('*').eq('atleta_id', miAtleta.id)
+      .gte('fecha', desde).order('fecha', { ascending: false }),
+    sb.from('tests').select('*').eq('atleta_id', miAtleta.id).order('fecha', { ascending: true }),
+    sb.from('metricas').select('*').eq('atleta_id', miAtleta.id).order('fecha', { ascending: false }).limit(60),
+    sb.from('perfil_atleta').select('fecha_objetivo, objetivo').eq('atleta_id', miAtleta.id).maybeSingle()
+  ]);
+  datosAtleta = {
+    sesiones: ses.data || [],
+    tests: tst.data || [],
+    metricas: met.data || [],
+    perfil: per.data || null
+  };
+  renderResumen();
+  renderHistorial();
+  renderCarga();
+  renderProgreso();
+}
+
+function renderResumen() {
+  const txtObj = textoObjetivo(datosAtleta.perfil);
+  $('objetivo-a').textContent = txtObj;
+  $('objetivo-a').classList.toggle('oculto', !txtObj);
+  const hoy = new Date();
+  const hoyIso = iso(hoy);
+  const ini = iso(lunesDe(hoy));
+  const fin = iso(sumarDias(lunesDe(hoy), 6));
+  const sem = datosAtleta.sesiones.filter(p => p.fecha >= ini && p.fecha <= fin);
+  const cargaSem = sem.reduce((a, p) => a + cargaSesion(p), 0);
+  const kmSem = sem.reduce((a, p) => a + (Number(p.km_reales) || 0), 0);
+  const mes = hoyIso.slice(0, 7);
+  const delMes = datosAtleta.sesiones.filter(p => p.fecha.startsWith(mes) && p.fecha <= hoyIso);
+  const hechas = delMes.filter(p => p.estado === 'hecha').length;
+  let objetivo = 'Sin fecha de objetivo';
+  if (datosAtleta.perfil && datosAtleta.perfil.fecha_objetivo) {
+    const dias = Math.ceil((new Date(datosAtleta.perfil.fecha_objetivo + 'T00:00:00') - new Date(hoyIso + 'T00:00:00')) / 86400000);
+    if (dias >= 0) objetivo = `${dias} días para ${datosAtleta.perfil.objetivo || 'tu objetivo'}`;
+  }
+  const items = [
+    ['Carga esta semana', cargaSem ? Math.round(cargaSem) : '—'],
+    ['Km esta semana', kmSem ? kmSem.toFixed(1) : '—'],
+    ['Hechas este mes', `${hechas} / ${delMes.length}`],
+    ['Objetivo', objetivo]
+  ];
+  const box = $('resumen-atleta');
+  box.innerHTML = '';
+  items.forEach(([label, valor]) => {
+    const d = document.createElement('div');
+    d.className = 'stat';
+    const b = document.createElement('b');
+    b.textContent = valor;
+    const sm = document.createElement('small');
+    sm.textContent = label;
+    d.append(b, sm);
+    box.appendChild(d);
+  });
+}
+
+function renderHistorial() {
+  const hoyIso = iso(new Date());
+  const box = $('historial-a');
+  box.innerHTML = '';
+  const pasadas = datosAtleta.sesiones.filter(p => p.fecha <= hoyIso);
+  if (!pasadas.length) {
+    box.textContent = 'Todavía no hay sesiones en las últimas 12 semanas.';
+    return;
+  }
+  pasadas.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'hist-item';
+    const titulo = document.createElement('strong');
+    titulo.textContent = `${p.fecha} · ${(p.descripcion || p.tipo || 'Sesión').split(' — ')[0]}`;
+    const det = document.createElement('div');
+    det.className = 'muted';
+    det.textContent = `${p.estado || 'pendiente'} · ${p.duracion_min ?? '-'} min · esfuerzo ${p.rpe ?? '-'} · ${p.km_reales ? p.km_reales + ' km' : 'sin km'}`;
+    row.append(titulo, det);
+    if (p.notas_atleta) {
+      const n = document.createElement('div');
+      n.className = 'muted';
+      n.textContent = '“' + p.notas_atleta + '”';
+      row.appendChild(n);
+    }
+    row.onclick = () => { mostrarTabA('cal'); mostrarDetalle(p); };
+    box.appendChild(row);
+  });
+}
+
+function renderCarga() {
+  const box = $('carga-a');
+  box.innerHTML = '';
+  const hoy = new Date();
+  const lunes = lunesDe(hoy);
+  const semanas = [];
+  for (let k = 11; k >= 0; k--) {
+    const ini = sumarDias(lunes, -7 * k);
+    const fin = sumarDias(ini, 6);
+    const ses = datosAtleta.sesiones.filter(p => p.fecha >= iso(ini) && p.fecha <= iso(fin) && p.fecha <= iso(hoy));
+    semanas.push({
+      ini,
+      carga: ses.reduce((a, p) => a + cargaSesion(p), 0),
+      km: ses.reduce((a, p) => a + (Number(p.km_reales) || 0), 0)
+    });
+  }
+  const actual = semanas[11].carga;
+  const previas = semanas.slice(8, 11);
+  const media = previas.reduce((a, s) => a + s.carga, 0) / 3;
+
+  const texto = document.createElement('p');
+  if (!media) {
+    texto.textContent = 'Necesito unas semanas con el esfuerzo registrado para calcular tu equilibrio de carga.';
+  } else {
+    const r = actual / media;
+    const aviso = r < 0.8 ? 'Carga baja: puedes subirla un poco.'
+      : r <= 1.3 ? 'Carga equilibrada.'
+      : 'Carga alta: cuida la recuperación.';
+    texto.textContent = `Esta semana llevas un ${Math.round(r * 100)}% de la media de las 3 anteriores. ${aviso}`;
+  }
+  box.appendChild(texto);
+
+  const max = Math.max(1, ...semanas.map(s => s.carga));
+  semanas.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'barra-row';
+    const lab = document.createElement('div');
+    lab.className = 'muted';
+    lab.textContent = fechaCorta(s.ini);
+    const fondo = document.createElement('div');
+    fondo.className = 'barra-fondo';
+    const barra = document.createElement('div');
+    barra.className = 'barra';
+    barra.style.width = `${(s.carga / max) * 100}%`;
+    fondo.appendChild(barra);
+    const val = document.createElement('div');
+    val.className = 'muted';
+    val.textContent = `${Math.round(s.carga)} · ${s.km ? s.km.toFixed(1) + ' km' : '—'}`;
+    row.append(lab, fondo, val);
+    box.appendChild(row);
+  });
+  dibujarForma($('forma-a'), datosAtleta.sesiones);
+}
+
+function renderProgreso() {
+  const tb = $('tests-a');
+  tb.innerHTML = '';
+  const tests = datosAtleta.tests;
+  if (!tests.length) tb.textContent = 'Todavía no tienes tests registrados.';
+  ['5k', 'cooper'].forEach(tipo => {
+    const lista = tests.filter(t => t.tipo === tipo);
+    if (!lista.length) return;
+    const titulo = document.createElement('strong');
+    titulo.textContent = tipo === '5k' ? '5 km' : 'Cooper 12 min';
+    tb.appendChild(titulo);
+    if (lista.length > 1) {
+      const primero = Number(lista[0].resultado);
+      const ultimo = Number(lista[lista.length - 1].resultado);
+      const txt = document.createElement('div');
+      txt.className = 'muted';
+      if (tipo === '5k') {
+        const mejora = primero - ultimo;
+        txt.textContent = mejora > 0 ? `Has mejorado ${Math.round(mejora)} s desde el primer test`
+          : mejora < 0 ? `Has perdido ${Math.round(-mejora)} s desde el primer test` : 'Sin cambios';
+      } else {
+        const mejora = ultimo - primero;
+        txt.textContent = mejora > 0 ? `Has sumado ${Math.round(mejora)} m desde el primer test`
+          : mejora < 0 ? `Has bajado ${Math.round(-mejora)} m desde el primer test` : 'Sin cambios';
+      }
+      tb.appendChild(txt);
+    }
+    lista.slice().reverse().forEach(t => {
+      const d = document.createElement('div');
+      d.className = 'zona';
+      d.textContent = `${t.fecha} · ${tipo === '5k' ? formatoTiempo(t.resultado) + ' (5 km)' : t.resultado + ' m (Cooper)'} · ${t.nivel_sugerido || ''}`;
+      tb.appendChild(d);
+    });
+  });
+
+  const mb = $('metricas-a');
+  mb.innerHTML = '';
+  const met = datosAtleta.metricas;
+  const media = (arr, k) => {
+    const v = arr.map(x => x[k]).filter(x => x !== null && x !== undefined && x !== '').map(Number);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  };
+  const rec = met.slice(0, 7), ant = met.slice(7, 14);
+  ['fc_reposo', 'hrv'].forEach(k => {
+    const a = media(rec, k), b = media(ant, k);
+    if (a === null || b === null) return;
+    const t = document.createElement('div');
+    t.className = 'muted';
+    const nombre = k === 'fc_reposo' ? 'Pulsaciones en reposo' : 'VFC';
+    t.textContent = `${nombre}: media de los últimos 7 días ${a.toFixed(0)} frente a ${b.toFixed(0)} de los 7 anteriores`;
+    mb.appendChild(t);
+  });
+  met.slice(0, 30).forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'zona';
+    d.textContent = `${m.fecha} · FC reposo ${m.fc_reposo ?? '-'} · VFC ${m.hrv ?? '-'} · Peso ${m.peso_kg ?? '-'} · Sueño ${m.sueno_h ?? '-'} h · Estrés ${m.estres ?? '-'}`;
+    mb.appendChild(d);
+  });
+}
+
+$('m-guardar').onclick = async () => {
+  const num = (id) => {
+    const v = $(id).value.trim();
+    return v === '' ? null : Number(v.replace(',', '.'));
+  };
+  const fila = {
+    atleta_id: miAtleta.id,
+    fecha: $('m-fecha').value || iso(new Date()),
+    fc_reposo: num('m-fc'),
+    hrv: num('m-hrv'),
+    peso_kg: num('m-peso'),
+    sueno_h: num('m-sueno'),
+    estres: num('m-estres')
+  };
+  const valores = [fila.fc_reposo, fila.hrv, fila.peso_kg, fila.sueno_h, fila.estres];
+  if (valores.every(v => v === null)) return alert('Escribe al menos un dato.');
+  if (valores.some(v => v !== null && Number.isNaN(v))) return alert('Revisa los números.');
+  const { error } = await sb.from('metricas').upsert(fila, { onConflict: 'atleta_id,fecha' });
+  if (error) return alert(error.message);
+  ['m-fc', 'm-hrv', 'm-peso', 'm-sueno', 'm-estres'].forEach(id => { $(id).value = ''; });
+  cargarTodoAtleta();
+};
+
+function mostrarDetalle(p) {
+  const partes = (p.descripcion || '').split(' — ');
+  $('det-titulo').textContent = partes[0] || p.tipo || 'Sesión';
+  $('det-meta').textContent = `${p.fecha} · ${p.tipo || ''} · ${p.duracion_min ?? '-'} min`;
+  $('det-texto').textContent = partes.slice(1).join(' — ') || 'Sin explicación adicional.';
+  $('det-estado').value = p.estado || 'pendiente';
+  $('det-rpe').value = p.rpe ?? '';
+  $('det-km').value = p.km_reales ?? '';
+  $('det-min').value = p.duracion_real_min ?? '';
+  $('det-pasos').innerHTML = '';
+  if (Array.isArray(p.pasos) && p.pasos.length && miAtleta) zonasDe(miAtleta.id).then(z => pintarPasos($('det-pasos'), p.pasos, z));
+  $('det-comentario').classList.toggle('oculto', !p.comentario_entrenador);
+  $('det-comentario').textContent = p.comentario_entrenador ? 'Comentario de tu entrenador:\n' + p.comentario_entrenador : '';
+  $('det-notas').value = p.notas_atleta || '';
+  $('det-guardar').onclick = async () => {
+    const rpe = $('det-rpe').value ? Number($('det-rpe').value) : null;
+    const kmTxt = $('det-km').value.trim().replace(',', '.');
+    const km = kmTxt ? Number(kmTxt) : null;
+    if (km !== null && Number.isNaN(km)) return alert('Los km deben ser un número.');
+    const { error } = await sb.from('sesiones_planificadas').update({
+      estado: $('det-estado').value,
+      rpe,
+      km_reales: km,
+      duracion_real_min: $('det-min').value ? Number($('det-min').value) : null,
+      notas_atleta: $('det-notas').value.trim() || null
+    }).eq('id', p.id);
+    if (error) return alert(error.message);
+    $('detalle-atleta').classList.add('oculto');
+    cargarSemana();
+    cargarTodoAtleta();
+  };
+  $('detalle-atleta').classList.remove('oculto');
+  $('detalle-atleta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+$('btn-acceso').onclick = async () => {
+  const email = $('acceso-email').value.trim();
+  if (!email) return alert('Escribe el email de acceso.');
+  const { error } = await sb.from('atletas')
+    .update({ email, user_id: null }).eq('id', atletaActual.id);
+  if (error) return alert(error.message);
+  atletaActual.email = email;
+  atletaActual.user_id = null;
+  $('acceso-estado').textContent = 'Sin cuenta: se vinculará al registrarse con este email';
+  alert('Listo. Cuando esa persona se registre con este email, su cuenta quedará vinculada a esta ficha.');
+};
+
+$('btn-asignar-atleta').onclick = async () => {
+  const { error } = await sb.from('atletas')
+    .update({ entrenador_id: miUserId }).eq('id', atletaActual.id);
+  if (error) return alert(error.message);
+  atletaActual.entrenador_id = miUserId;
+  $('btn-asignar-atleta').classList.add('oculto');
+  cargarAtletas();
+  alert('Atleta asignado a tu cuenta.');
+};
+
+$('btn-borrar-atleta').onclick = async () => {
+  const a = atletaActual;
+  if (!a) return;
+  if (!confirm(`¿Eliminar a ${a.nombre} y todos sus datos (sesiones, bloques, tests, zonas, mensajes y perfil)? No se puede deshacer.`)) return;
+  const tablas = ['mensajes', 'perfil_atleta', 'sesiones_planificadas', 'bloques', 'tests', 'zonas'];
+  for (const t of tablas) {
+    const { error } = await sb.from(t).delete().eq('atleta_id', a.id);
+    if (error) return alert(`Error al borrar en ${t}: ${error.message}`);
+  }
+  const { error } = await sb.from('atletas').delete().eq('id', a.id);
+  if (error) return alert(error.message);
+  atletaActual = null;
+  $('ficha').classList.add('oculto');
+  cargarAtletas();
+  alert('Atleta eliminado. Su cuenta de acceso sigue existiendo en Supabase, si quieres borrarla hazlo desde Authentication → Users.');
+};
+
+$('det-cerrar').onclick = () => $('detalle-atleta').classList.add('oculto');
+$('semana-ant-a').onclick = () => moverCalendario(-1);
+$('semana-sig-a').onclick = () => moverCalendario(1);
+$('ver-biblio-atleta').onchange = async () => {
+  const { error } = await sb.from('atletas')
+    .update({ ve_biblioteca: $('ver-biblio-atleta').checked }).eq('id', atletaActual.id);
+  if (error) alert(error.message);
+};
+
+/* ---------- MENSAJES ---------- */
+
+async function cargarMensajes(pref, atletaId, miId) {
+  const { data, error } = await sb.from('mensajes').select('*')
+    .eq('atleta_id', atletaId).order('created_at');
+  if (error) return;
+  const box = $(pref + '-msgs');
+  box.innerHTML = '';
+  data.forEach(m => {
+    const b = document.createElement('div');
+    b.className = 'burbuja ' + (m.autor_id === miId ? 'mia' : 'suya');
+    const hora = document.createElement('small');
+    hora.textContent = new Date(m.created_at).toLocaleString('es-ES',
+      { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const txt = document.createElement('div');
+    txt.textContent = m.texto;
+    b.append(hora, txt);
+    box.appendChild(b);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function activarChat(pref, atletaId, miId) {
+  $(pref + '-enviar').onclick = async () => {
+    const texto = $(pref + '-txt').value.trim();
+    if (!texto) return;
+    const { error } = await sb.from('mensajes').insert({ atleta_id: atletaId, autor_id: miId, texto });
+    if (error) return alert(error.message);
+    $(pref + '-txt').value = '';
+    cargarMensajes(pref, atletaId, miId);
+  };
+  cargarMensajes(pref, atletaId, miId);
+  clearInterval(chatTimers[pref]);
+  chatTimers[pref] = setInterval(() => cargarMensajes(pref, atletaId, miId), 10000);
+}
+
+$('btn-login').onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('email').value, password: $('password').value
+  });
+  mostrarError($('error'), error ? error.message : '');
+  if (!error) mostrarSegunSesion();
+};
+
+$('btn-registro').onclick = async () => {
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  const nombre = $('nombre-registro').value.trim();
+  if (!nombre || !email || password.length < 6) {
+    return mostrarError($('error'), 'Escribe tu nombre, un email y una contraseña de al menos 6 caracteres.');
+  }
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: {
+      data: { nombre },
+      emailRedirectTo: window.location.origin + window.location.pathname
+    }
+  });
+  if (error) return mostrarError($('error'), error.message);
+  if (data.session) {
+    mostrarError($('error'), '');
+    mostrarSegunSesion();
+  } else {
+    mostrarError($('error'), 'Cuenta creada. Revisa tu email para confirmarla y después entra.');
+  }
+};
+
+$('btn-olvido').onclick = async () => {
+  const email = $('email').value.trim();
+  if (!email) return mostrarError($('error'), 'Escribe tu email arriba y vuelve a pulsar el botón.');
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  mostrarError($('error'), error ? error.message : 'Te hemos enviado un email para cambiar la contraseña.');
+};
+
+$('btn-pass-nueva').onclick = async () => {
+  const nueva = $('pass-nueva').value;
+  if (nueva.length < 6) return alert('La contraseña debe tener al menos 6 caracteres');
+  const { error } = await sb.auth.updateUser({ password: nueva });
+  if (error) return alert(error.message);
+  alert('Contraseña cambiada. Ya puedes entrar.');
+  history.replaceState(null, '', window.location.pathname);
+  await sb.auth.signOut();
+  mostrarSegunSesion();
+};
+
+function alternarVer(checkId, inputId) {
+  $(checkId).onchange = () => { $(inputId).type = $(checkId).checked ? 'text' : 'password'; };
+}
+alternarVer('ver-pass', 'password');
+alternarVer('ver-pass-nueva', 'pass-nueva');
+
+$('btn-salir').onclick = async () => { await sb.auth.signOut(); mostrarSegunSesion(); };
+
+/* ---------- ATLETAS ---------- */
+
+$('btn-crear').onclick = async () => {
+  const { data: { user } } = await sb.auth.getUser();
+  const { error } = await sb.from('atletas').insert({
+    entrenador_id: user.id,
+    nombre: $('nombre').value,
+    email: $('email-atleta').value || null
+  });
+  const emailNuevo = $('email-atleta').value.trim();
+  if (error) return alert(error.message);
+  $('nombre').value = ''; $('email-atleta').value = '';
+  if (emailNuevo) {
+    const enlace = `${window.location.origin}${window.location.pathname}?registro=1&email=${encodeURIComponent(emailNuevo)}`;
+    window.open(enlace, '_blank');
+    alert('Se ha abierto una ventana para que el atleta se registre.\n\nSi estás en este mismo ordenador, la sesión se comparte: ábrela en una ventana de incógnito o pásale el enlace a su móvil.\n\n' + enlace);
+  } else {
+    alert('Atleta creado. Añade su email para poder enviarle el registro.');
+  }
+  cargarAtletas();
+};
+
+async function cargarAtletas() {
+  const { data, error } = await sb.from('atletas').select('id, nombre, nivel, ve_biblioteca, email, user_id, entrenador_id').order('nombre');
+  if (error) return alert(error.message);
+  $('lista').innerHTML = '';
+  const selPlan = $('plan-atleta');
+  selPlan.innerHTML = '';
+  data.forEach(a => {
+    const op = document.createElement('option');
+    op.value = a.id;
+    op.textContent = a.nombre;
+    selPlan.appendChild(op);
+    const div = document.createElement('div');
+    div.className = 'fila-atleta';
+    const nom = document.createElement('div');
+    nom.className = 'nom';
+    nom.textContent = a.nombre + (a.nivel ? ` · ${a.nivel}` : '');
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    chips.dataset.chips = a.id;
+    div.append(nom, chips);
+    div.onclick = () => abrirFicha(a);
+    $('lista').appendChild(div);
+  });
+  if (!data.length) $('lista').innerHTML = '<p class="muted">Todavía no hay atletas.</p>';
+  $('imp-atleta').innerHTML = selPlan.innerHTML;
+  if (atletaActual) { $('imp-atleta').value = atletaActual.id; selPlan.value = atletaActual.id; }
+  cargarPanelAtletas(data);
+}
+
+function abrirFicha(atleta) {
+  atletaActual = atleta;
+  mostrarTab('ficha');
+  mostrarSub('calendario');
+  $('ficha').classList.remove('oculto');
+  $('ficha-nombre').textContent = atleta.nombre;
+  semanaInicio = lunesDe(new Date());
+  if ($('plan-atleta')) $('plan-atleta').value = atleta.id;
+  $('imp-atleta').value = atleta.id;
+  $('ver-biblio-atleta').checked = !!atleta.ve_biblioteca;
+  $('acceso-email').value = atleta.email || '';
+  $('btn-asignar-atleta').classList.toggle('oculto', !!atleta.entrenador_id);
+  $('acceso-estado').textContent = atleta.user_id
+    ? 'Vinculada a una cuenta registrada'
+    : 'Sin cuenta: se vinculará al registrarse con este email';
+  activarChat('chat-t', atleta.id, miUserId);
+  cargarPerfilResumen(atleta.id);
+  cargarMetricasTrainer(atleta.id);
+  cargarFormaTrainer(atleta.id);
+  cargarBloques();
+  $('btn-strava-sync-t').classList.toggle('oculto', !atleta.strava_conectado);
+  pintarActividades($('actividades-t'), atleta.id);
+  cargarZonas();
+  cargarTests();
+  cargarSemana();
+}
+
+/* ---------- ZONAS ---------- */
+
+$('btn-zona').onclick = async () => {
+  const { error } = await sb.from('zonas').insert({
+    atleta_id: atletaActual.id,
+    tipo: $('zona-tipo').value,
+    zona: parseInt($('zona-num').value),
+    minimo: parseFloat($('zona-min').value),
+    maximo: parseFloat($('zona-max').value)
+  });
+  if (error) return alert(error.message);
+  cargarZonas();
+};
+
+function textoZona(z) {
+  const fmt = z.tipo === 'ritmo' ? (v) => formatoTiempo(v) + ' /km' : (v) => v + ' ppm';
+  return `${z.tipo === 'ritmo' ? 'RITMO' : 'FC'} · Z${z.zona}: ${fmt(z.minimo)} – ${fmt(z.maximo)}`;
+}
+
+function parseTiempo(txt) {
+  if (!txt) return null;
+  const m = String(txt).trim().match(/^(\d+):(\d{1,2})$/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+function calcularZonas(f) {
+  const zonas = [];
+  const fcMax = Number(f.fc_max) || null;
+  const fcRep = Number(f.fc_reposo) || null;
+  const fcUm = Number(f.fc_umbral) || null;
+  if (fcUm) {
+    [[0.70, 0.85], [0.85, 0.89], [0.90, 0.94], [0.95, 0.99], [1.00, 1.06]].forEach((r, i) =>
+      zonas.push({ tipo: 'fc', zona: i + 1, minimo: Math.round(fcUm * r[0]), maximo: Math.round(fcUm * r[1]) }));
+  } else if (fcMax) {
+    const reserva = fcRep ? fcMax - fcRep : null;
+    [[0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0]].forEach((r, i) => {
+      const lo = reserva ? fcRep + r[0] * reserva : fcMax * r[0];
+      const hi = reserva ? fcRep + r[1] * reserva : fcMax * r[1];
+      zonas.push({ tipo: 'fc', zona: i + 1, minimo: Math.round(lo), maximo: Math.round(hi) });
+    });
+  }
+  const U = parseTiempo(f.ritmo_umbral);
+  if (U) {
+    [[1.29, 1.45], [1.14, 1.29], [1.06, 1.14], [0.99, 1.06], [0.90, 0.99]].forEach((r, i) =>
+      zonas.push({ tipo: 'ritmo', zona: i + 1, minimo: Math.round(U * r[0]), maximo: Math.round(U * r[1]) }));
+  }
+  return zonas;
+}
+
+async function volcarZonas(atletaId, perfil) {
+  const zonas = calcularZonas(perfil);
+  if (!zonas.length) return 0;
+  const { error: e1 } = await sb.from('zonas').delete().eq('atleta_id', atletaId);
+  if (e1) throw e1;
+  const { error: e2 } = await sb.from('zonas').insert(zonas.map(z => ({ ...z, atleta_id: atletaId })));
+  if (e2) throw e2;
+  return zonas.length;
+}
+
+$('btn-zonas-perfil').onclick = async () => {
+  const { data, error } = await sb.from('perfil_atleta').select('*')
+    .eq('atleta_id', atletaActual.id).maybeSingle();
+  if (error) return alert(error.message);
+  if (!data) return alert('El atleta todavía no ha rellenado su perfil.');
+  try {
+    const n = await volcarZonas(atletaActual.id, data);
+    if (!n) return alert('Faltan pulsaciones (máx., reposo o umbral) o ritmo de umbral en el perfil.');
+  } catch (e) { return alert(e.message); }
+  cargarZonas();
+};
+
+async function cargarZonasAtleta() {
+  const { data, error } = await sb.from('zonas').select('*')
+    .eq('atleta_id', miAtleta.id).order('tipo').order('zona');
+  if (error) return alert(error.message);
+  const box = $('zonas-a');
+  box.innerHTML = '';
+  if (!data.length) { box.textContent = 'Aún no tienes zonas. Rellena tu perfil con pulsaciones y ritmo de umbral.'; return; }
+  data.forEach(z => {
+    const p = document.createElement('div');
+    p.className = 'zona';
+    p.textContent = textoZona(z);
+    box.appendChild(p);
+  });
+}
+
+async function cargarZonas() {
+  const { data, error } = await sb.from('zonas')
+    .select('*').eq('atleta_id', atletaActual.id).order('tipo').order('zona');
+  if (error) return alert(error.message);
+  $('zonas').innerHTML = '';
+  data.forEach(z => {
+    const p = document.createElement('div');
+    p.className = 'zona';
+    p.textContent = textoZona(z);
+    $('zonas').appendChild(p);
+  });
+}
+
+/* ---------- BIBLIOTECA DE SESIONES ---------- */
+
+async function cargarBiblioteca() {
+  const { data, error } = await sb.from('sesiones_biblioteca')
+    .select('*').order('nombre');
+  if (error) return alert(error.message);
+
+  bibliotecaCache = data;
+
+  const select = $('cal-lib');
+  select.innerHTML = '';
+  data.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.nivel ? s.nivel + ' · ' : ''}${s.nombre}`;
+    select.appendChild(opt);
+  });
+
+  pintarBiblioteca(data);
+}
+
+function pintarBiblioteca(data) {
+  const filtro = $('filtro-nivel').value;
+  const visibles = filtro ? data.filter(s => s.nivel === filtro) : data;
+  $('biblioteca').innerHTML = '';
+  visibles.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'atleta';
+
+    const titulo = document.createElement('strong');
+    titulo.textContent = s.nombre;
+
+    const detalle = document.createElement('div');
+    detalle.className = 'muted';
+    detalle.textContent =
+      `${s.nivel || 'sin nivel'} · ${s.tipo || 'sin tipo'} · ${s.duracion_min ?? '-'} min · carga ${s.carga ?? '-'}`;
+
+    const acciones = document.createElement('div');
+    acciones.className = 'acciones';
+
+    const editar = document.createElement('button');
+    editar.className = 'mini gold';
+    editar.textContent = 'Editar';
+    editar.onclick = () => editarSesion(s);
+
+    const borrar = document.createElement('button');
+    borrar.className = 'mini danger';
+    borrar.textContent = 'Borrar';
+    borrar.onclick = () => borrarSesion(s.id);
+
+    acciones.append(editar, borrar);
+    div.append(titulo, detalle, acciones);
+    $('biblioteca').appendChild(div);
+  });
+}
+
+function editarSesion(s) {
+  sesionEditandoId = s.id;
+  $('s-nombre').value = s.nombre;
+  $('s-tipo').value = s.tipo || 'otro';
+  $('s-nivel').value = s.nivel || 'principiante';
+  $('s-duracion').value = s.duracion_min ?? '';
+  $('s-carga').value = s.carga ?? '';
+  $('s-descripcion').value = s.descripcion || '';
+  pasosForm = Array.isArray(s.pasos) ? s.pasos.map(x => ({ ...x })) : [];
+  sesionTeniaPasos = pasosForm.length > 0;
+  pintarPasosForm();
+  $('btn-sesion').textContent = 'Actualizar sesión';
+  $('btn-cancelar-sesion').classList.remove('oculto');
+  $('s-nombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function limpiarFormularioSesion() {
+  sesionEditandoId = null;
+  $('s-nombre').value = '';
+  $('s-tipo').value = 'rodaje';
+  $('s-nivel').value = 'principiante';
+  $('s-duracion').value = '';
+  $('s-carga').value = '';
+  $('s-descripcion').value = '';
+  pasosForm = [];
+  sesionTeniaPasos = false;
+  pintarPasosForm();
+  $('btn-sesion').textContent = 'Guardar sesión';
+  $('btn-cancelar-sesion').classList.add('oculto');
+}
+
+$('btn-cancelar-sesion').onclick = limpiarFormularioSesion;
+$('filtro-nivel').onchange = () => pintarBiblioteca(bibliotecaCache);
+
+$('btn-sesion').onclick = async () => {
+  const nombre = $('s-nombre').value.trim();
+  if (!nombre) return alert('Pon un nombre a la sesión');
+
+  const datos = {
+    nombre,
+    nivel: $('s-nivel').value,
+    tipo: $('s-tipo').value,
+    duracion_min: $('s-duracion').value ? parseInt($('s-duracion').value) : null,
+    carga: $('s-carga').value ? parseInt($('s-carga').value) : null,
+    descripcion: $('s-descripcion').value || null
+  };
+  const pl = pasosLimpios();
+  if (pl || sesionTeniaPasos) datos.pasos = pl;
+
+  let error;
+  if (sesionEditandoId) {
+    ({ error } = await sb.from('sesiones_biblioteca')
+      .update(datos).eq('id', sesionEditandoId));
+  } else {
+    const { data: { user } } = await sb.auth.getUser();
+    ({ error } = await sb.from('sesiones_biblioteca')
+      .insert({ ...datos, entrenador_id: user.id }));
+  }
+
+  if (error) return alert(error.message);
+  limpiarFormularioSesion();
+  cargarBiblioteca();
+};
+
+async function borrarSesion(id) {
+  if (!confirm('¿Borrar esta sesión de la biblioteca?')) return;
+  const { error } = await sb.from('sesiones_biblioteca').delete().eq('id', id);
+  if (error) return alert(error.message);
+  cargarBiblioteca();
+}
+
+/* ---------- CALENDARIO SEMANAL ---------- */
+
+$('semana-ant').onclick = () => moverCalendario(-1);
+$('semana-sig').onclick = () => moverCalendario(1);
+
+$('btn-asignar').onclick = async () => {
+  const libId = $('cal-lib').value;
+  const fecha = $('cal-fecha').value;
+  if (!libId || !fecha) return alert('Elige una sesión y una fecha');
+
+  const base = bibliotecaCache.find(s => s.id === libId);
+  const { error } = await sb.from('sesiones_planificadas').insert({
+    atleta_id: atletaActual.id,
+    fecha,
+    tipo: base.tipo,
+    descripcion: $('cal-desc').value || base.nombre + (base.descripcion ? ' — ' + base.descripcion : ''),
+    duracion_min: base.duracion_min,
+    ...(base.pasos ? { pasos: base.pasos } : {})
+  });
+  if (error) return alert(error.message);
+
+  $('cal-desc').value = '';
+  semanaInicio = lunesDe(new Date(fecha + 'T00:00:00'));
+  cargarSemana();
+};
+
+const COLORES = { rodaje: '#1976d2', series: '#d32f2f', tirada: '#2e7d32', fuerza: '#7b1fa2', bici: '#f57c00', otro: '#607d8b' };
+const NOMBRES_TIPO = { rodaje: 'Rodaje', series: 'Series', tirada: 'Tirada larga', fuerza: 'Fuerza', bici: 'Bici', otro: 'Otro' };
+document.querySelectorAll('[data-leyenda]').forEach(el => {
+  el.innerHTML = Object.keys(COLORES).map(k =>
+    `<span class="leg"><i style="background:${COLORES[k]}"></i>${NOMBRES_TIPO[k]}</span>`).join('');
+});
+
+let vistaMes = false;
+let mesActual = new Date();
+let arrastrando = null;
+let seleccion = null;
+let pendienteMover = null;
+
+let diaSeleccionado = null;
+let bibliotecaDia = [];
+
+function cerrarPickerDia() {
+  $('modal-dia').classList.add('oculto');
+}
+
+async function abrirPickerDia(dia) {
+  diaSeleccionado = dia;
+  $('dia-titulo').textContent = 'Añadir el ' + dia.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('dia-nueva-form').classList.add('oculto');
+  $('dia-buscar').value = '';
+  $('modal-dia').classList.remove('oculto');
+  const { data, error } = await sb.from('sesiones_biblioteca').select('*').order('nombre');
+  if (error) return alert(error.message);
+  bibliotecaDia = data || [];
+  pintarBibliotecaDia();
+}
+
+function pintarBibliotecaDia() {
+  const q = $('dia-buscar').value.trim().toLowerCase();
+  const box = $('dia-lista');
+  box.innerHTML = '';
+  const lista = bibliotecaDia.filter(x => !q || (x.nombre || '').toLowerCase().includes(q));
+  if (!lista.length) {
+    box.textContent = 'No hay sesiones en la biblioteca con ese nombre.';
+    return;
+  }
+  lista.forEach(x => {
+    const row = document.createElement('div');
+    row.className = 'dia-item';
+    const txt = document.createElement('div');
+    const t = document.createElement('strong');
+    t.textContent = x.nombre;
+    const m = document.createElement('div');
+    m.className = 'muted';
+    m.textContent = `${x.nivel || ''} · ${x.tipo || ''} · ${x.duracion_min ?? '-'} min`;
+    txt.append(t, m);
+    const b = document.createElement('button');
+    b.className = 'mini';
+    b.textContent = 'Añadir';
+    b.onclick = () => ponerEnDia(x);
+    row.append(txt, b);
+    box.appendChild(row);
+  });
+}
+
+async function ponerEnDia(x) {
+  const { error } = await sb.from('sesiones_planificadas').insert({
+    atleta_id: atletaActual.id,
+    fecha: iso(diaSeleccionado),
+    tipo: x.tipo,
+    descripcion: x.nombre + (x.descripcion ? ' — ' + x.descripcion : ''),
+    duracion_min: x.duracion_min,
+    ...(x.pasos ? { pasos: x.pasos } : {})
+  });
+  if (error) return alert(error.message);
+  cerrarPickerDia();
+  cargarSemana();
+}
+
+$('dia-buscar').oninput = pintarBibliotecaDia;
+$('dia-cerrar').onclick = cerrarPickerDia;
+$('dia-nueva').onclick = () => $('dia-nueva-form').classList.toggle('oculto');
+$('dn-guardar').onclick = async () => {
+  const nombre = $('dn-nombre').value.trim();
+  if (!nombre) return alert('Escribe un nombre para la sesión.');
+  const { data, error } = await sb.from('sesiones_biblioteca').insert({
+    entrenador_id: miUserId,
+    nombre,
+    nivel: $('dn-nivel').value,
+    tipo: $('dn-tipo').value,
+    duracion_min: Number($('dn-duracion').value) || null,
+    descripcion: $('dn-descripcion').value.trim() || null
+  }).select().single();
+  if (error) return alert(error.message);
+  bibliotecaDia.push(data);
+  await ponerEnDia(data);
+};
+
+function iniciarMover(p) {
+  seleccion = p;
+  $('banner-texto').textContent = `Toca un día para mover o copiar «${p.descripcion || p.tipo || 'sesión'}»`;
+  $('banner-mover').classList.remove('oculto');
+}
+function cancelarSeleccion() {
+  seleccion = null;
+  $('banner-mover').classList.add('oculto');
+}
+function soltarEnDia(dia) {
+  const p = arrastrando || seleccion;
+  if (!p) return;
+  arrastrando = null;
+  const nueva = iso(dia);
+  if (nueva === p.fecha) return cancelarSeleccion();
+  pendienteMover = { p, fecha: nueva };
+  $('modal-texto').textContent = `¿Mover o copiar «${p.descripcion || p.tipo || 'sesión'}» al ${dia.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}?`;
+  $('modal-mover').classList.remove('oculto');
+}
+async function ejecutarMover(copiar) {
+  if (!pendienteMover) return;
+  const { p, fecha } = pendienteMover;
+  let res;
+  if (copiar) {
+    res = await sb.from('sesiones_planificadas').insert({
+      atleta_id: p.atleta_id, bloque_id: p.bloque_id ?? null, fecha,
+      tipo: p.tipo, descripcion: p.descripcion, duracion_min: p.duracion_min, estado: 'pendiente',
+      ...(p.pasos ? { pasos: p.pasos } : {})
+    });
+  } else {
+    res = await sb.from('sesiones_planificadas').update({ fecha }).eq('id', p.id);
+  }
+  if (res.error) return alert(res.error.message);
+  pendienteMover = null;
+  $('modal-mover').classList.add('oculto');
+  cancelarSeleccion();
+  cargarSemana();
+}
+$('mover-si').onclick = () => ejecutarMover(false);
+$('mover-copiar').onclick = () => ejecutarMover(true);
+$('mover-no').onclick = () => { pendienteMover = null; $('modal-mover').classList.add('oculto'); };
+$('banner-cancelar').onclick = cancelarSeleccion;
+
+function mostrarTab(id) {
+  document.querySelectorAll('.secc').forEach(x => x.classList.toggle('on', x.dataset.sec === id));
+  document.querySelectorAll('#tabs-t .tabt').forEach(x => x.classList.toggle('on', x.dataset.tab === id));
+}
+function mostrarSub(id) {
+  document.querySelectorAll('.subsec').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
+  document.querySelectorAll('.subt').forEach(x => x.classList.toggle('on', x.dataset.sub === id));
+}
+document.querySelectorAll('#tabs-t .tabt').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
+document.querySelectorAll('.subt').forEach(b => b.onclick = () => mostrarSub(b.dataset.sub));
+
+function moverCalendario(dir) {
+  if (vistaMes) mesActual = new Date(mesActual.getFullYear(), mesActual.getMonth() + dir, 1);
+  else semanaInicio = sumarDias(semanaInicio, 7 * dir);
+  cargarSemana();
+}
+
+function alternarVista() {
+  vistaMes = !vistaMes;
+  mesActual = new Date(semanaInicio.getFullYear(), semanaInicio.getMonth(), 1);
+  const txt = vistaMes ? 'Ver semana' : 'Ver mes';
+  $('btn-vista').textContent = txt;
+  $('btn-vista-a').textContent = txt;
+  cargarSemana();
+}
+$('btn-vista').onclick = alternarVista;
+$('btn-vista-a').onclick = alternarVista;
+
+async function cargarMes() {
+  const ini = mesActual;
+  const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 0);
+  const sufijo = modoAtletaActivo ? '-a' : '';
+  $('semana-rango' + sufijo).textContent = ini.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+  const { data, error } = await sb.from('sesiones_planificadas').select('*')
+    .eq('atleta_id', atletaActual.id).gte('fecha', iso(ini)).lte('fecha', iso(fin)).order('fecha');
+  if (error) return alert(error.message);
+
+  const cont = $('semana' + sufijo);
+  cont.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'mes-grid';
+  ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'mes-head';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const primero = lunesDe(ini);
+  for (let i = 0; i < 42; i++) {
+    const dia = sumarDias(primero, i);
+    const celda = document.createElement('div');
+    celda.className = 'mes-celda' + (dia.getMonth() !== ini.getMonth() ? ' fuera' : '');
+    const num = document.createElement('div');
+    num.className = 'mes-num';
+    num.textContent = dia.getDate();
+    celda.appendChild(num);
+
+    const delDia = data.filter(p => p.fecha === iso(dia));
+    delDia.slice(0, 3).forEach(p => {
+      const t = document.createElement('div');
+      t.className = 'mes-item';
+      t.style.borderLeftColor = (typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999';
+      t.style.background = ((typeof COLORES !== 'undefined' && COLORES[p.tipo]) || '#999') + '26';
+      t.textContent = (p.descripcion || p.tipo || '').split(' — ')[0];
+      ponerPunto(t, p);
+      t.draggable = true;
+      t.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
+      t.ondragend = () => { arrastrando = null; };
+      t.onclick = (e) => { e.stopPropagation(); iniciarMover(p); };
+      celda.appendChild(t);
+    });
+    if (delDia.length > 3) {
+      const m = document.createElement('div');
+      m.className = 'muted';
+      m.textContent = `+${delDia.length - 3} más`;
+      celda.appendChild(m);
+    }
+    celda.ondragover = (e) => e.preventDefault();
+    celda.ondrop = (e) => { e.preventDefault(); soltarEnDia(dia); };
+    celda.onclick = () => {
+      if (seleccion) return soltarEnDia(dia);
+      if (!modoAtletaActivo) return abrirPickerDia(dia);
+      semanaInicio = lunesDe(dia);
+      vistaMes = false;
+      $('btn-vista').textContent = 'Ver mes';
+      $('btn-vista-a').textContent = 'Ver mes';
+      cargarSemana();
+    };
+    grid.appendChild(celda);
+  }
+  cont.appendChild(grid);
+}
+
+async function cargarSemana() {
+  if (vistaMes) return cargarMes();
+  const inicio = iso(semanaInicio);
+  const fin = iso(sumarDias(semanaInicio, 6));
+  $('semana-rango' + (modoAtletaActivo ? '-a' : '')).textContent = `${inicio} → ${fin}`;
+
+  const { data, error } = await sb.from('sesiones_planificadas')
+    .select('*')
+    .eq('atleta_id', atletaActual.id)
+    .gte('fecha', inicio)
+    .lte('fecha', fin)
+    .order('fecha');
+  if (error) return alert(error.message);
+
+  const totalMin = data.reduce((a, p) => a + (p.duracion_min || 0), 0);
+  const hechas = data.filter(p => p.estado === 'hecha').length;
+
+  $('semana' + (modoAtletaActivo ? '-a' : '')).innerHTML = '';
+  const resumen = document.createElement('div');
+  resumen.className = 'resumen-semana';
+  resumen.textContent = `${data.length} sesiones · ${(totalMin / 60).toFixed(1)} h · ${hechas} hechas`;
+  $('semana' + (modoAtletaActivo ? '-a' : '')).appendChild(resumen);
+
+  const grid = document.createElement('div');
+  grid.className = 'semana-grid';
+
+  for (let i = 0; i < 7; i++) {
+    const dia = sumarDias(semanaInicio, i);
+    const delDia = data.filter(p => p.fecha === iso(dia));
+    const minDia = delDia.reduce((a, p) => a + (p.duracion_min || 0), 0);
+
+    const col = document.createElement('div');
+    col.className = 'dia-col';
+    col.ondragover = (e) => e.preventDefault();
+    col.ondrop = (e) => { e.preventDefault(); soltarEnDia(dia); };
+    col.onclick = () => {
+      if (seleccion) return soltarEnDia(dia);
+      if (!modoAtletaActivo) abrirPickerDia(dia);
+    };
+
+    const head = document.createElement('div');
+    head.className = 'dia-head';
+    head.innerHTML = `<b>${DIAS[i].slice(0, 3)} ${dia.getDate()}/${dia.getMonth() + 1}</b><span>${minDia ? minDia + ' min' : ''}</span>`;
+
+    const body = document.createElement('div');
+    body.className = 'dia-body';
+    if (delDia.length === 0) {
+      const vacio = document.createElement('div');
+      vacio.className = 'vacio-dia';
+      vacio.textContent = 'Descanso';
+      body.appendChild(vacio);
+    }
+    delDia.forEach(p => body.appendChild(tarjetaSesion(p)));
+
+    col.append(head, body);
+    grid.appendChild(col);
+  }
+  $('semana' + (modoAtletaActivo ? '-a' : '')).appendChild(grid);
+}
+
+function tarjetaSesion(p) {
+  const card = document.createElement('div');
+  card.className = 'tarjeta' + (p.estado === 'hecha' ? ' hecha' : '');
+  card.style.borderLeftColor = COLORES[p.tipo] || '#607d8b';
+  card.style.background = (COLORES[p.tipo] || '#607d8b') + '26';
+  card.draggable = true;
+  card.ondragstart = (e) => { arrastrando = p; e.dataTransfer.setData('text/plain', p.id || ''); };
+  card.ondragend = () => { arrastrando = null; };
+
+  const tit = document.createElement('div');
+  tit.className = 'tit';
+  tit.textContent = p.descripcion || p.tipo || 'Sesión';
+  ponerPunto(tit, p);
+
+  const det = document.createElement('div');
+  det.className = 'det';
+  det.textContent = `${p.tipo || ''} · ${p.duracion_min ?? '-'} min` + (p.duracion_real_min ? ` · hechos ${p.duracion_real_min}` : '');
+  const mv = document.createElement('button');
+  mv.className = 'mover-btn';
+  mv.textContent = '↔ mover';
+  mv.onclick = (e) => { e.stopPropagation(); iniciarMover(p); };
+  det.appendChild(mv);
+
+  if (modoAtletaActivo) {
+    card.onclick = (e) => { if (seleccion) return; mostrarDetalle(p); };
+    card.append(tit, det);
+    return card;
+  }
+
+  card.onclick = (e) => { if (!seleccion) e.stopPropagation(); };
+  const ver = document.createElement('button');
+  ver.className = 'mover-btn';
+  ver.textContent = p.notas_atleta ? 'detalle ●' : 'detalle';
+  ver.title = p.notas_atleta ? 'El atleta ha dejado notas' : 'Ver pasos, datos del atleta y comentar';
+  ver.onclick = (e) => { e.stopPropagation(); abrirDetalleSesion(p); };
+  det.appendChild(ver);
+  const acc = document.createElement('div');
+  acc.className = 'acc';
+
+  const estado = document.createElement('select');
+  ['pendiente', 'hecha', 'omitida'].forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e;
+    opt.textContent = e;
+    if (e === p.estado) opt.selected = true;
+    estado.appendChild(opt);
+  });
+  estado.onchange = async () => {
+    const { error } = await sb.from('sesiones_planificadas')
+      .update({ estado: estado.value }).eq('id', p.id);
+    if (error) return alert(error.message);
+    cargarSemana();
+  };
+
+  const borrar = document.createElement('button');
+  borrar.className = 'danger';
+  borrar.textContent = '✕';
+  borrar.onclick = async () => {
+    if (!confirm('¿Quitar esta sesión del calendario?')) return;
+    const { error } = await sb.from('sesiones_planificadas').delete().eq('id', p.id);
+    if (error) return alert(error.message);
+    cargarSemana();
+  };
+
+  acc.append(estado, borrar);
+  card.append(tit, det, acc);
+  return card;
+}
+
+/* ---------- TESTS Y NIVEL ---------- */
+
+const NIVELES = ['principiante', 'intermedio', 'avanzado'];
+
+function nivelDe5k(seg) { return seg < 1200 ? 'avanzado' : seg <= 1620 ? 'intermedio' : 'principiante'; }
+function nivelDeCooper(m) { return m >= 2600 ? 'avanzado' : m >= 2000 ? 'intermedio' : 'principiante'; }
+
+function nivelSugerido(tests) {
+  const ultimo = {};
+  tests.forEach(t => { if (!ultimo[t.tipo] || t.fecha > ultimo[t.tipo].fecha) ultimo[t.tipo] = t; });
+  const valores = [];
+  if (ultimo['5k']) valores.push(NIVELES.indexOf(ultimo['5k'].nivel_sugerido));
+  if (ultimo['cooper']) valores.push(NIVELES.indexOf(ultimo['cooper'].nivel_sugerido));
+  if (!valores.length) return null;
+  return NIVELES[Math.floor(valores.reduce((a, b) => a + b, 0) / valores.length)];
+}
+
+function aSegundos(txt) {
+  const m = txt.trim().match(/^(\d+):(\d{1,2})$/);
+  return m ? (+m[1]) * 60 + (+m[2]) : parseFloat(txt);
+}
+function formatoTiempo(seg) {
+  const m = Math.floor(seg / 60), s = Math.round(seg % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+$('btn-test').onclick = async () => {
+  const tipo = $('test-tipo').value;
+  const valor = tipo === '5k' ? aSegundos($('test-resultado').value) : parseFloat($('test-resultado').value);
+  if (!valor || isNaN(valor)) return alert('Escribe un resultado válido');
+  const fecha = $('test-fecha').value || iso(new Date());
+  const nivel = tipo === '5k' ? nivelDe5k(valor) : nivelDeCooper(valor);
+  const { error } = await sb.from('tests').insert({
+    atleta_id: atletaActual.id, fecha, tipo, resultado: valor, nivel_sugerido: nivel
+  });
+  if (error) return alert(error.message);
+  $('test-resultado').value = '';
+  cargarTests();
+};
+
+async function cargarTests() {
+  const { data, error } = await sb.from('tests')
+    .select('*').eq('atleta_id', atletaActual.id).order('fecha', { ascending: false });
+  if (error) return alert(error.message);
+  $('tests').innerHTML = '';
+  data.forEach(t => {
+    const p = document.createElement('div');
+    p.className = 'zona';
+    const txt = t.tipo === '5k' ? `${formatoTiempo(t.resultado)} (5 km)` : `${t.resultado} m (Cooper)`;
+    p.textContent = `${t.fecha} · ${txt} · ${t.nivel_sugerido}`;
+    $('tests').appendChild(p);
+  });
+  const sug = nivelSugerido(data);
+  $('nivel-sugerido').textContent = sug ? `Nivel sugerido: ${sug}` : 'Sin tests todavía';
+  if (sug) {
+    if (atletaActual.nivel !== sug) {
+      await sb.from('atletas').update({ nivel: sug }).eq('id', atletaActual.id);
+      atletaActual.nivel = sug;
+    }
+  }
+}
+
+/* ---------- PLANES POR NIVEL ---------- */
+
+const FACTOR = [0.8, 0.85, 0.9, 0.75, 0.95, 1.0, 1.05, 0.8, 1.1, 1.15, 0.7, 0.5];
+const CONF_NIVEL = {
+  principiante: {
+    calidad: { nombre: 'Cuestas suaves', tipo: 'series', min: 35, desc: '6 subidas suaves de 20 s a ritmo cómodo, bajada caminando.' },
+    rodaje: { nombre: 'Rodaje suave', tipo: 'rodaje', base: 30, desc: 'Ritmo de conversación.' },
+    larga: { nombre: 'Tirada larga', tipo: 'tirada', base: 45, desc: 'Ritmo muy cómodo, puedes hablar sin cortarte.' }
+  },
+  intermedio: {
+    calidad: { nombre: 'Series 6x800', tipo: 'series', min: 60, desc: 'Calentamiento 15 min, 6x800 m a ritmo de 5 km con 2 min caminando.' },
+    rodaje: { nombre: 'Rodaje medio', tipo: 'rodaje', base: 45, desc: 'Ritmo cómodo, los últimos 10 min algo más rápido.' },
+    larga: { nombre: 'Tirada larga', tipo: 'tirada', base: 70, desc: '60 min suaves y el resto a ritmo de maratón.' }
+  },
+  avanzado: {
+    calidad: { nombre: 'Series 5x1000', tipo: 'series', min: 70, desc: 'Calentamiento 20 min, 5x1000 m a ritmo de 10 km con 90 s de recuperación.' },
+    rodaje: { nombre: 'Rodaje doble ritmo', tipo: 'rodaje', base: 55, desc: 'Dos mitades, la segunda más rápida.' },
+    larga: { nombre: 'Tirada larga con ritmo final', tipo: 'tirada', base: 100, desc: 'Los últimos 40 min a ritmo de maratón.' }
+  }
+};
+
+function generarSesiones(nivel) {
+  const c = CONF_NIVEL[nivel];
+  const out = [];
+  for (let w = 1; w <= 12; w++) {
+    if (w === 12) {
+      out.push({ semana: 12, dia_semana: 2, tipo: 'test', nombre: 'Test 5 km', duracion_min: null,
+        descripcion: 'Máximo esfuerzo controlado. Anota el tiempo en la ficha del atleta.' });
+      out.push({ semana: 12, dia_semana: 4, tipo: 'rodaje', nombre: 'Rodaje suave', duracion_min: 30,
+        descripcion: 'Ritmo muy suave.' });
+      out.push({ semana: 12, dia_semana: 6, tipo: 'test', nombre: 'Test Cooper 12 min', duracion_min: 12,
+        descripcion: 'Máxima distancia en 12 minutos. Anota los metros en la ficha del atleta.' });
+      continue;
+    }
+    const f = FACTOR[w - 1];
+    out.push({ semana: w, dia_semana: 2, tipo: c.calidad.tipo, nombre: c.calidad.nombre,
+      duracion_min: Math.round(c.calidad.min * f), descripcion: c.calidad.desc });
+    out.push({ semana: w, dia_semana: 4, tipo: c.rodaje.tipo, nombre: c.rodaje.nombre,
+      duracion_min: Math.round(c.rodaje.base * f), descripcion: c.rodaje.desc });
+    out.push({ semana: w, dia_semana: 6, tipo: c.larga.tipo, nombre: c.larga.nombre,
+      duracion_min: Math.round(c.larga.base * f), descripcion: c.larga.desc });
+  }
+  return out;
+}
+
+async function planDelNivel(nivel) {
+  const { data } = await sb.from('planes').select('*')
+    .eq('nivel', nivel).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  return data;
+}
+
+async function generarPlan(nivel) {
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: existentes } = await sb.from('planes').select('id')
+    .eq('entrenador_id', user.id).eq('nivel', nivel);
+  if (existentes && existentes.length) {
+    if (!confirm('Ya existe un plan de este nivel. ¿Sustituirlo por uno nuevo?')) return;
+    await sb.from('planes').delete().in('id', existentes.map(p => p.id));
+  }
+  const { data: plan, error } = await sb.from('planes')
+    .insert({ entrenador_id: user.id, nombre: `Plan ${nivel} · 12 semanas`, nivel, semanas: 12 })
+    .select().single();
+  if (error) return alert(error.message);
+  const filas = generarSesiones(nivel).map(s => ({ ...s, plan_id: plan.id }));
+  const { error: e2 } = await sb.from('plan_sesiones').insert(filas);
+  if (e2) return alert(e2.message);
+  verPlan(nivel);
+}
+
+async function verPlan(nivel) {
+  const plan = await planDelNivel(nivel);
+  const vista = $('plan-vista');
+  vista.innerHTML = '';
+  if (!plan) {
+    vista.innerHTML = '<p class="muted">No hay plan para este nivel. Pulsa «Generar plan».</p>';
+    return;
+  }
+  const { data: filas, error } = await sb.from('plan_sesiones').select('*')
+    .eq('plan_id', plan.id).order('semana').order('dia_semana');
+  if (error) return alert(error.message);
+  const DIA = { 2: 'Martes', 4: 'Jueves', 6: 'Sábado' };
+  for (let w = 1; w <= plan.semanas; w++) {
+    const h = document.createElement('h3');
+    h.textContent = `Semana ${w}`;
+    vista.appendChild(h);
+    filas.filter(f => f.semana === w).forEach(f => {
+      const d = document.createElement('div');
+      d.className = 'zona';
+      d.textContent = `${DIA[f.dia_semana] || f.dia_semana} · ${f.nombre}` +
+        (f.duracion_min ? ` · ${f.duracion_min} min` : '') + ` — ${f.descripcion || ''}`;
+      vista.appendChild(d);
+    });
+  }
+}
+
+$('btn-plan-ver').onclick = () => verPlan($('plan-nivel').value);
+$('btn-plan-generar').onclick = () => generarPlan($('plan-nivel').value);
+
+$('plan-fecha').value = iso(lunesDe(new Date()));
+
+$('btn-plan-aplicar').onclick = async () => {
+  const atletaId = $('plan-atleta').value;
+  const inicio = $('plan-fecha').value;
+  if (!atletaId) return alert('No hay atletas. Añade uno en la pestaña Atletas.');
+  if (!inicio) return alert('Elige la fecha de inicio');
+  const plan = await planDelNivel($('plan-nivel').value);
+  if (!plan) return alert('No hay plan para ese nivel. Pulsa «Generar plan» primero.');
+
+  const { data: filas, error } = await sb.from('plan_sesiones').select('*').eq('plan_id', plan.id);
+  if (error) return alert(error.message);
+  if (!filas || !filas.length) return alert('El plan no tiene sesiones. Vuelve a generarlo.');
+
+  const base = lunesDe(new Date(inicio + 'T00:00:00'));
+  const fin = iso(sumarDias(base, plan.semanas * 7 - 1));
+  const { data: bloque, error: eb } = await sb.from('bloques').insert({
+    atleta_id: atletaId, nombre: plan.nombre, fecha_inicio: iso(base), fecha_fin: fin
+  }).select().single();
+  if (eb) return alert(eb.message);
+
+  const sesiones = filas.map(f => ({
+    atleta_id: atletaId,
+    bloque_id: bloque.id,
+    fecha: iso(sumarDias(base, (f.semana - 1) * 7 + (f.dia_semana - 1))),
+    tipo: f.tipo,
+    descripcion: f.nombre + (f.descripcion ? ' — ' + f.descripcion : ''),
+    duracion_min: f.duracion_min
+  }));
+  const { error: es } = await sb.from('sesiones_planificadas').insert(sesiones);
+  if (es) return alert(es.message);
+
+  const nombreAtleta = $('plan-atleta').selectedOptions[0].textContent;
+  alert(`«${plan.nombre}» aplicado a ${nombreAtleta}: ${sesiones.length} sesiones desde el ${iso(base)}.`);
+  if (atletaActual && atletaActual.id === atletaId) {
+    semanaInicio = base;
+    cargarSemana();
+    cargarBloques();
+  }
+};
+
+mostrarSegunSesion();
+</script>
+<div id="modal-sesion" class="oculto modal">
+  <div class="modal-caja" style="max-width:520px;max-height:90vh;overflow:auto">
+    <div class="cab" id="ms-titulo"></div>
+    <div class="muted" id="ms-meta"></div>
+    <p id="ms-texto" style="white-space:pre-line;font-size:14px"></p>
+    <div id="ms-pasos"></div>
+    <h3>Lo que ha registrado el atleta</h3>
+    <div id="ms-atleta" style="white-space:pre-line;font-size:14px"></div>
+    <h3>Tu comentario</h3>
+    <textarea id="ms-comentario" rows="3" placeholder="El atleta lo verá al abrir la sesión"></textarea>
+    <div class="acciones">
+      <button id="ms-guardar">Guardar comentario</button>
+      <button id="ms-cerrar" class="sec">Cerrar</button>
+    </div>
+  </div>
+</div>
+<div id="banner-mover" class="oculto banner-mover">
+  <span id="banner-texto"></span>
+  <button id="banner-cancelar" class="sec">Cancelar</button>
+</div>
+<div id="modal-mover" class="oculto modal">
+  <div class="modal-caja">
+    <p id="modal-texto"></p>
+    <div class="acciones">
+      <button id="mover-si" class="gold">Mover</button>
+      <button id="mover-copiar" class="sec">Copiar</button>
+      <button id="mover-no" class="link">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div id="modal-dia" class="oculto modal">
+  <div class="modal-caja modal-grande">
+    <div class="cab" id="dia-titulo"></div>
+    <input id="dia-buscar" placeholder="Buscar en la biblioteca">
+    <div id="dia-lista" class="dia-lista"></div>
+    <button id="dia-nueva" class="sec">+ Nueva sesión</button>
+    <div id="dia-nueva-form" class="oculto">
+      <input id="dn-nombre" placeholder="Nombre (ej. Series 6x800)">
+      <select id="dn-nivel">
+        <option value="principiante">Principiante</option>
+        <option value="intermedio">Intermedio</option>
+        <option value="avanzado">Avanzado</option>
+      </select>
+      <select id="dn-tipo">
+        <option value="rodaje">Rodaje</option>
+        <option value="series">Series</option>
+        <option value="tirada">Tirada larga</option>
+        <option value="fuerza">Fuerza</option>
+        <option value="bici">Bici</option>
+        <option value="otro">Otro</option>
+      </select>
+      <input id="dn-duracion" type="number" min="0" placeholder="Duración (min)">
+      <textarea id="dn-descripcion" rows="2" placeholder="Descripción"></textarea>
+      <button id="dn-guardar">Guardar y añadir a este día</button>
+    </div>
+    <div class="acciones"><button id="dia-cerrar" class="link">Cerrar</button></div>
+  </div>
+</div>
+</body>
+</html>
