@@ -1,6 +1,6 @@
 const FUNCION_STRAVA = 'https://xnqksbpwsqdgngaskbpx.supabase.co/functions/v1/strava-funcion-ts';
 const STRAVA_CLIENT_ID = '295862';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ycmZxdnJzcmpmZGRodXpsZWVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3Njk5OTYsImV4cCI6MjEwOTM0NTk5Nn0.a9kMi-yjcNOy8jVB_yFp00aj8kaan7QhuzULjFg-N8I';
+const SUPABASE_KEY = 'sb_publishable_3cFWXykjHyxsdo65c2CZkA_8dM6U-HF';
 const REDIRECT = 'https://alextrainerep.github.io/Alextrainingapp-resistencia/';
 
 // Token de la sesión del entrenador/atleta (lo guarda supabase-js en sessionStorage)
